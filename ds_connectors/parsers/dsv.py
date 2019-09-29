@@ -10,7 +10,7 @@ class DelimitedParser(object):
     def read_dsv(file_stream: StringIO, fieldnames=None, restkey=None, restval=None, dialect=None, delimiter=None,
                  quotechar=None, escapechar=None, doublequote=None, skipinitialspace=None, lineterminator=None,
                  quoting=None) -> dict:
-        """ reads an StringIO stream and returns a dictionary of the delimited file. (see pythong csv documentation)
+        """ reads an StringIO stream and returns a dictionary of the delimited file. (see python csv documentation)
 
         :param file_stream: a String IO file stream to parse
         :param fieldnames: a set of field names for the dictionary if no header

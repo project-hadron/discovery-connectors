@@ -5,9 +5,11 @@
 ###### Requirements without Version Specifiers ######
 setuptools
 discovery-foundation
+pyyaml
 pandas
 pymongo
 boto3
+pyhive
 
 # SQl and HTML libs
 #sqlalchemy

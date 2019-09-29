@@ -61,6 +61,8 @@ setup(
         'pandas',
         'pymongo',
         'boto3',
+        'pyyaml',
+        'pyhive'
     ],
     test_suite='tests',
 )
