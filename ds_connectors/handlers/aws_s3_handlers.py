@@ -43,7 +43,7 @@ class S3SourceHandler(AbstractSourceHandler):
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['csv', 'dsv', 'pickle', 'parquet']
+        return ['csv', 'dsv', 'pickle']
 
     def load_canonical(self) -> dict:
         if not isinstance(self.connector_contract, ConnectorContract):
@@ -175,13 +175,8 @@ class AwsPersistHandler(AbstractPersistHandler):
         _kwargs = self.connector_contract.kwargs
         if connector_type.lower() not in self.supported_types():
             raise ValueError(f"The source type '{connector_type}' is not supported. see supported_types()")
-        load_type, rtn_type = connector_type.split(':')
-        s3_client = boto3.client('s3')
         s3_resource = boto3.resource('s3')
-        # create the bucket with the region from the Session``````````````````````````````````
-        session = boto3.session.Session()
-        bucket_config = {'LocationConstraint': session.region_name}
-        bucket_response = s3_client.create_bucket(Bucket=bucket, CreateBucketConfiguration=bucket_config)
+        # create the bucket with the region from the Session
         _kwargs = self.connector_contract.kwargs
         upload_args = {'ACL': 'public-read'}
         if _kwargs.get('ServerSideEncryption') is not None:

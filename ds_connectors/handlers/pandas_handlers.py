@@ -1,12 +1,10 @@
 import filecmp
-import io
 import os
 import pickle
 import shutil
 from contextlib import closing
 import threading
 
-import boto3
 import pandas as pd
 import yaml
 
@@ -128,7 +126,7 @@ class PandasPersistHandler(AbstractPersistHandler):
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['pickle', 'yaml']
+        return ['pickle', 'yaml', 'csv']
 
     def get_modified(self) -> [int, float, str]:
         """ """
@@ -318,114 +316,3 @@ class PandasPersistHandler(AbstractPersistHandler):
         with threading.Lock():
             with closing(open(_path_file, 'rb')) as f:
                 return pickle.load(f)
-
-
-class FileHandlers(object):
-
-    @staticmethod
-    def _pickle_dump(df: pd.DataFrame, file: str, protocol: int=None) -> None:
-        """ dumps a pickle file
-
-        :param df: the Dataframe to write
-        :param file: the name and path of the file
-        :param protocol: the pickle protocol. Default is pickle.DEFAULT_PROTOCOL
-        """
-        _path = file
-        if protocol is None:
-            protocol = pickle.HIGHEST_PROTOCOL
-        with closing(open(_path, 'wb')) as f:
-            pickle.dump(df, f, protocol=protocol)
-
-    @staticmethod
-    def _pickle_load(file: str) -> pd.DataFrame:
-        """ loads a pickle file
-
-        :param file: the name and path of the file
-        :return:
-        """
-        _path = file
-        with closing(open(_path, 'rb')) as f:
-            return pickle.load(f)
-
-    @staticmethod
-    def _aws_s3_dump(file_name: str, bucket: str, key: str) -> None:
-        """ dumps a file to s3 bucket
-
-        :param file_name: the name of the file to dump
-        :param bucket: the name of the bucket in s#
-        :param key: the key
-        """
-        s3 = boto3.client('s3')
-        bucket = s3.Bucket(bucket)
-        with open(file_name, 'rb') as f:
-            object_data = f.read()
-            s3.put_object(Body=object_data, Bucket=bucket, Key=key)
-        return
-
-    @staticmethod
-    def _aws_s3_load(file_name: str, bucket: str, key: str) -> None:
-        """ loads a file from s3 bucket
-
-        :param file_name: the name of the file to dump
-        :param bucket: the name of the bucket in s#
-        :param key: the key
-        """
-        buffer = io.BytesIO()
-        s3 = boto3.resource('s3')
-        s3object = s3.Object(bucket, key)
-        s3object.download_fileobj(buffer)
-        with open(file_name, 'w+') as f:
-            f.write(s3object)
-        return
-
-    @staticmethod
-    def _parquet_dump(df: pd.DataFrame, file: str, engine: str=None, compression: str=None, index: bool=None,
-                      partition_cols: list=None, **kwargs) -> None:
-        """ Write a DataFrame to the binary parquet format.
-
-        :param df: the dataframe to write
-        :param file: File path or Root Directory path
-        :param engine: Parquet library to use. {‘auto’, ‘pyarrow’, ‘fastparquet’}
-        :param compression: Name of the compression to use. Use None for no compression. {‘snappy’, ‘gzip’, ‘brotli’}
-        :param index: If True, include the dataframe’s index(es) in the file output.
-        :param partition_cols: Column names by which to partition the dataset.
-        :param kwargs: Additional arguments passed to the parquet library.
-        """
-        df.to_parquet(file, engine=engine, compression=compression, index=index, partition_cols=partition_cols,
-                      **kwargs)
-
-    @staticmethod
-    def _parquet_load(file, engine: str=None, columns: list=None, **kwargs) -> pd.DataFrame:
-        """Load a parquet object from the file path, returning a DataFrame.
-
-        :param file: file path
-        :param engine: Parquet library to use. {‘auto’, ‘pyarrow’, ‘fastparquet’}
-        :param columns: If not None, only these columns will be read from the file.
-        :param kwargs: Additional arguments passed to the parquet library.
-        :return: pandas Dataframe
-        """
-        return pd.read_parquet(file, engine=engine, columns=columns, **kwargs)
-
-    @staticmethod
-    def _yaml_dump(data, file) -> None:
-        _path = file
-        try:
-            with closing(open(_path, 'w')) as ymlfile:
-                yaml.safe_dump(data, ymlfile, default_flow_style=False)
-        except IOError as e:
-            raise IOError("The configuration file {} failed to open with: {}".format(_path, e))
-
-    @staticmethod
-    def _yaml_load(file) -> dict:
-        _path = file
-        if os.path.exists(_path) and os.path.isfile(_path):
-            try:
-                with closing(open(_path, 'r')) as ymlfile:
-                    rtn_dict = yaml.safe_load(ymlfile)
-            except IOError as e:
-                raise IOError("The configuration file {} failed to open with: {}".format(_path, e))
-            if not isinstance(rtn_dict, dict) or not rtn_dict:
-                raise TypeError("The configuration file {} could not be loaded as a dict type".format(_path))
-            return rtn_dict
-        else:
-            raise FileNotFoundError("The yaml file {} does not exist".format(_path))
