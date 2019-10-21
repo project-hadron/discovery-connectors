@@ -100,18 +100,11 @@ class S3SourceHandler(AbstractSourceHandler):
 
 
 class AwsPersistHandler(AbstractPersistHandler):
-    """ A simple pure python data persist handler"""
-    yaml_api = None
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the connector_contract dictionary """
         super().__init__(connector_contract)
         self._modified = 0
-        try:
-            import pyyaml
-        except ImportError:
-            raise ImportError("pyyaml package is required for yaml support")
-        self.yaml_api = pyyaml
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -193,7 +186,7 @@ class AwsPersistHandler(AbstractPersistHandler):
             s3_resource.Object(bucket, resource).put(Body=pickle_byte_obj)
             return True
         # not found
-        raise ValueError(f"PandasPersistHandler only supports 'pickle' and 'yaml' source type,"
+        raise ValueError(f"PandasPersistHandler only supports 'pickle' source type,"
                          f" '{connector_type}' found in Source Contract source-type")
 
     def remove_canonical(self) -> bool:
