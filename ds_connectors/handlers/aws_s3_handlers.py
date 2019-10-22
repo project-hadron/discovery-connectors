@@ -155,7 +155,7 @@ class AwsPersistHandler(AbstractPersistHandler):
         _kwargs = deepcopy(self.connector_contract.kwargs)
         rtn_dict = None
         if connector_type.lower() in ['pickle']:
-            return pickle.load(s3_object['Body'].read())
+            return pickle.loads(s3_object['Body'].read())
         raise LookupError(f'The connector type {connector_type} is not currently supported')
 
     def persist_canonical(self, canonical: dict) -> bool:
