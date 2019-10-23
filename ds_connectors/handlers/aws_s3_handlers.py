@@ -13,7 +13,7 @@ from ds_connectors.parsers.dsv import DelimitedParser
 __author__ = 'Darryl Oatridge, Neil Pasricha'
 
 
-class S3SourceHandler(AbstractSourceHandler):
+class AwsS3SourceHandler(AbstractSourceHandler):
     """ An AWS S3 source handler
 
         Delimitor Separated Value (dsv):
@@ -99,7 +99,7 @@ class S3SourceHandler(AbstractSourceHandler):
         return rtn_list
 
 
-class AwsPersistHandler(AbstractPersistHandler):
+class AwsS3PersistHandler(AbstractPersistHandler):
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the connector_contract dictionary """
