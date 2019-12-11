@@ -56,9 +56,10 @@ setup(
     license='BSD',
     include_package_data=True,
     package_data={},
+    python_requires='>=3.6',
     install_requires=[
         'discovery-foundation',
-        'pandas',
+        'pandas>0.25',
         'pymongo',
         'boto3',
         'pyyaml',

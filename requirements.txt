@@ -6,9 +6,9 @@
 setuptools
 discovery-foundation
 pyyaml
-pandas
 pymongo
 boto3
+pandas
 pyhive
 
 # SQl and HTML libs
