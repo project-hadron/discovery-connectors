@@ -63,7 +63,8 @@ setup(
         'pymongo',
         'boto3',
         'pyyaml',
-        'pyhive'
+        'pyhive',
+        'psycopg2'
     ],
     test_suite='tests',
 )

@@ -10,6 +10,7 @@ pymongo
 boto3
 pandas
 pyhive
+psycopg2
 
 # SQl and HTML libs
 #sqlalchemy
