@@ -5,7 +5,7 @@ __author__ = 'Johan Gielstra'
 
 
 class PostgresSourceHandler(AbstractSourceHandler):
-    """ A mongoDB source handler"""
+    """ A Postgres Source Handler"""
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
