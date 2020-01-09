@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from ds_foundation.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 
-__author__ = 'Darryl Oatridge, Neil Pasricha'
+__author__ = 'Darryl Oatridge, Omar Eid'
 
 
 class MongoSourceHandler(AbstractSourceHandler):
@@ -10,7 +10,6 @@ class MongoSourceHandler(AbstractSourceHandler):
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
         super().__init__(connector_contract)
-        self._modified = 0
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -22,104 +21,43 @@ class MongoSourceHandler(AbstractSourceHandler):
             the ordered list of values for that header
         """
         if not isinstance(self.connector_contract, ConnectorContract):
-            raise ValueError("The Connector Contract is not valid")
-        resource = self.connector_contract.resource
-        connector_type = self.connector_contract.connector_type
-        location = self.connector_contract.location
-        collection = self.connector_contract.kwargs.get('collection')
-        filters = self.connector_contract.kwargs.get('filters')
-        if connector_type.lower() not in self.supported_types():
-            raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
-        client = MongoClient(location)
-        db = client[resource]
-        stream = db[collection]
-        cursor = stream.find(filters)
-        rtn_dict = {}
-        for line in list(cursor):
-            for k, v in line.items():
-                if k not in rtn_dict:
-                    rtn_dict[k] = []
-                rtn_dict.get(k).append(v)
-        return rtn_dict
-
-    def get_modified(self) -> [int, float, str]:
-        return self._modified
-
-
-class MongoPersistHandler(AbstractPersistHandler):
-    # a mongoDB persist handler
-
-    def __init__(self, connector_contract: ConnectorContract):
-        """ initialise the Hander passing the connector_contract dictionary """
-        super().__init__(connector_contract)
-        self._modified = 0
-
-    def supported_types(self) -> list:
-        """ The source types supported with this module"""
-        return ['mongo']
-
-    def get_modified(self) -> [int, float, str]:
-        """ returns if the file has been modified"""
-        # TODO:
-        raise NotImplemented("This is not yet implemented")
+            raise ValueError("The PandasSource Connector Contract has not been set")
+        _cc = self.connector_contract
+        load_params = _cc.kwargs
+        load_params.update(_cc.query)  # Update kwargs with those in the uri query
+        return {}
 
     def exists(self) -> bool:
         """ Returns True is the file exists """
-        # TODO:
-        raise NotImplemented("This is not yet implemented")
 
-    def load_canonical(self) -> dict:
-        if not isinstance(self.connector_contract, ConnectorContract):
-            raise ValueError("The Connector Contract is not valid")
-        resource = self.connector_contract.resource
-        connector_type = self.connector_contract.connector_type
-        location = self.connector_contract.location
-        collection = self.connector_contract.kwargs.get('collection')
-        filters = self.connector_contract.kwargs.get('filters')
-        if connector_type.lower() not in self.supported_types():
-            raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
-        client = MongoClient(location)
-        db = client[resource]
-        stream = db[collection]
-        cursor = stream.find(filters)
-        rtn_dict = {}
-        for line in list(cursor):
-            for k, v in line.items():
-                if k not in rtn_dict:
-                    rtn_dict[k] = []
-                rtn_dict.get(k).append(v)
-        return rtn_dict
+    def get_modified(self) -> [int, float, str]:
+        pass
+
+class MongoPersistHandler(MongoSourceHandler, AbstractPersistHandler):
+    # a mongoDB persist handler
 
     def persist_canonical(self, canonical: dict) -> bool:
-        """ persists either the canonical dataset"""
-        resource = self.connector_contract.resource
-        connector_type = self.connector_contract.connector_type
-        location = self.connector_contract.location
-        collection = self.connector_contract.kwargs.get('collection')
-        if connector_type.lower() not in self.supported_types():
-            raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
-        client = MongoClient(location)
-        db = client[resource]
-        stream = db[collection]
-        # TODO:
-        raise NotImplemented("This is not yet implemented")
+        """ persists the canonical dataset
+
+        Extra Parameters in the ConnectorContract kwargs:
+            - file_type: (optional) the type of the source file. if not set, inferred from the file extension
+        """
+        if not isinstance(self.connector_contract, ConnectorContract):
+            return False
+        _uri = self.connector_contract.uri
+        return self.backup_canonical(uri=_uri, canonical=canonical)
+
+    def backup_canonical(self, canonical: dict, uri: str, ignore_kwargs: bool=False) -> bool:
+        """ creates a backup of the canonical to an alternative URI  """
+        if not isinstance(self.connector_contract, ConnectorContract):
+            return False
+        _cc = self.connector_contract
+        _address = _cc.parse_address(uri=uri)
+        persist_params = {} if ignore_kwargs else _cc.kwargs
+        persist_params.update(_cc.parse_query(uri=uri))
 
     def remove_canonical(self) -> bool:
         if not isinstance(self.connector_contract, ConnectorContract):
-            raise ValueError("The Connector Contract has not been set correctly")
-        resource = self.connector_contract.resource
-        connector_type = self.connector_contract.connector_type
-        location = self.connector_contract.location
-        collection = self.connector_contract.kwargs.get('collection')
-        # TODO:
-        raise NotImplemented("This is not yet implemented")
+            return False
+        _cc = self.connector_contract
 
-    def backup_canonical(self, max_backups=None):
-        """ creates a backup of the current source contract resource"""
-        if not isinstance(self.connector_contract, ConnectorContract):
-            return
-        max_backups = max_backups if isinstance(max_backups, int) else 10
-        resource = self.connector_contract.resource
-        location = self.connector_contract.location
-        # TODO:
-        raise NotImplemented("This is not yet implemented")
