@@ -59,12 +59,13 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'discovery-foundation',
-        'pandas>0.25',
-        'pyyaml',
     ],
     extras_require={'postgress': ['psycopg2'],
                     'pyhive': ['pyhive'],
-                    'pymongo': ['pymongo']
+                    'pymongo': ['pymongo'],
+                    'boto3': ['boto3'],
+                    'pandas': ['pandas>0.25'],
+                    'pyyaml': ['pyyaml'],
                     },
     test_suite='tests',
 )
