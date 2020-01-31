@@ -15,7 +15,7 @@ class HiveSourceHandler(AbstractSourceHandler):
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['hive:python', 'hive:pandas']
+        return ['hive']
 
     def load_canonical(self) -> [dict, pd.DataFrame]:
         """ returns the canonical dataset based on the source contract
@@ -24,25 +24,22 @@ class HiveSourceHandler(AbstractSourceHandler):
         """
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The Connector Contract is not valid")
-        database = self.connector_contract.resource
-        connector_type = self.connector_contract.connector_type
-        host = self.connector_contract.location
-        user = self.connector_contract.kwargs.get('user')
-        password = self.connector_contract.kwargs.get('password')
-        auth = self.connector_contract.kwargs.get('auth')
-        configuration = self.connector_contract.kwargs.get('configuration')
-        kerberos_service_name = self.connector_contract.kwargs.get('kerberos_service_name')
-        thrift_transport = self.connector_contract.kwargs.get('thrift_transport')
-        query = self.connector_contract.kwargs.get('query')
+        database = self.connector_contract.path
+        host = self.connector_contract.hostname
+        user = self.connector_contract.username
+        password = self.connector_contract.password
+        auth = self.connector_contract.get_key_value('auth', '')
+        configuration = self.connector_contract.get_key_value('configuration', '')
+        kerberos_service_name = self.connector_contract.get_key_value('kerberos_service_name', '')
+        thrift_transport = self.connector_contract.get_key_value('thrift_transport', '')
+        canonical = self.connector_contract.get_key_value('canonical', 'dict')
+        query = self.connector_contract.query
         host_name, port = host.rsplit(sep=':')
-        if connector_type.lower() not in self.supported_types():
-            raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
-
         conn = hive.Connection(host=host_name, port=port, username=user, password=password, database=database,
                                configuration=configuration, auth=auth, kerberos_service_name=kerberos_service_name,
                                thrift_transport=thrift_transport)
         # return a pandas DataFrame
-        if (connector_type.lower().endswith('pandas')):
+        if canonical.lower().endswith('pandas'):
             return pd.read_sql(query, conn)
         # default return a dictionary
         cursor = conn.cursor()

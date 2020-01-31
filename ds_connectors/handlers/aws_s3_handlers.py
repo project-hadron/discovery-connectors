@@ -170,7 +170,7 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
         _uri = self.connector_contract.address
         return self.backup_canonical(uri=_uri, canonical=canonical)
 
-    def backup_canonical(self, canonical: [pd.DataFrame, dict], uri: str, ignore_kwargs: bool=False) -> bool:
+    def backup_canonical(self, canonical: [pd.DataFrame, dict], uri: str, **kwargs) -> bool:
         """ persists the canonical dataset as a backup to the specified URI resource. Note that only the
         address is taken from the URI and all other attributes are taken from the ConnectorContract
 
@@ -187,7 +187,7 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
             raise ValueError("The Python Source Connector Contract has not been set correctly")
         schema, bucket, path = _cc.parse_address_elements(uri=uri)
         _, _, _ext = path.rpartition('.')
-        cc_params = {} if ignore_kwargs else _cc.kwargs
+        cc_params = kwargs if isinstance(kwargs, dict) else _cc.kwargs
         cc_params.update(_cc.parse_query(uri=uri))
         # pop all the extra params
         s3_put_params = cc_params.pop('s3_put_params', _cc.kwargs.get('put_object_kw', {}))

@@ -16,6 +16,9 @@ class PostgresSourceHandler(AbstractSourceHandler):
         """ The source types supported with this module"""
         return ['postgresql', 'postgres']
 
+    def exists(self) -> bool:
+        return True
+
     def load_canonical(self) -> dict:
         """ returns the canonical dataset based on the source contract
             The canonical in this instance is a dictionary that has the headers as the key and then
@@ -24,14 +27,14 @@ class PostgresSourceHandler(AbstractSourceHandler):
         conn = None
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The Connector Contract is not valid")
-        database = self.connector_contract.resource
-        host = self.connector_contract.location
-        connector_type = self.connector_contract.connector_type
+        database = self.connector_contract.path[1:]
+        host = self.connector_contract.hostname
+        connector_type = self.connector_contract.schema
         # jdbc url ?? nicer than individual parameters
         query = self.connector_contract.kwargs.get('query')
-        user = self.connector_contract.kwargs.get('user', 'postgres')
-        password = self.connector_contract.kwargs.get('password', 'postgres')
-        port = self.connector_contract.kwargs.get('port', 5432)
+        user = self.connector_contract.username
+        password = self.connector_contract.password
+        port = self.connector_contract.port or '5432'
         if connector_type.lower() not in self.supported_types():
             raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
         try:
