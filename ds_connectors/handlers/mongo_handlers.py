@@ -19,7 +19,7 @@ class MongoSourceHandler(AbstractSourceHandler):
         """ The source types supported with this module"""
         return ['mongo']
 
-    def load_canonical(self) -> pd.DataFrame:
+    def load_canonical(self, **kwargs) -> pd.DataFrame:
         """ returns the canonical dataset based on the source contract
             The canonical in this instance is a dictionary that has the headers as the key and then
             the ordered list of values for that header
@@ -31,7 +31,7 @@ class MongoSourceHandler(AbstractSourceHandler):
 
         load_params = _cc.kwargs
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
-
+        load_params.update(kwargs)     # Update with any passed though the call
         if load_params.get("aggregate") is not None:
             return pd.DataFrame(list(self._mongo_collection.aggregate(_cc.kwargs.get("aggregate", []))))
         elif load_params.get("query") is not None:
@@ -63,7 +63,7 @@ class MongoSourceHandler(AbstractSourceHandler):
 class MongoPersistHandler(MongoSourceHandler, AbstractPersistHandler):
     # a mongoDB persist handler
 
-    def persist_canonical(self, canonical: pd.DataFrame) -> bool:
+    def persist_canonical(self, canonical: pd.DataFrame, **kwargs) -> bool:
         """ persists the canonical dataset
         Extra Parameters in the ConnectorContract kwargs:
             - file_type: (optional) the type of the source file. if not set, inferred from the file extension
@@ -71,7 +71,7 @@ class MongoPersistHandler(MongoSourceHandler, AbstractPersistHandler):
         if not isinstance(self.connector_contract, ConnectorContract):
             return False
         _uri = self.connector_contract.uri
-        return self.backup_canonical(uri=_uri, canonical=canonical)
+        return self.backup_canonical(uri=_uri, canonical=canonical, **kwargs)
 
     def backup_canonical(self, canonical: pd.DataFrame, uri: str, **kwargs) -> bool:
         """ creates a backup of the canonical to an alternative URI  """

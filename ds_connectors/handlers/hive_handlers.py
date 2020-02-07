@@ -17,7 +17,7 @@ class HiveSourceHandler(AbstractSourceHandler):
         """ The source types supported with this module"""
         return ['hive']
 
-    def load_canonical(self) -> [dict, pd.DataFrame]:
+    def load_canonical(self, **kwargs) -> [dict, pd.DataFrame]:
         """ returns the canonical dataset based on the source contract
             The canonical in this instance is a dictionary that has the headers as the key and then
             the ordered list of values for that header
@@ -37,7 +37,7 @@ class HiveSourceHandler(AbstractSourceHandler):
         host_name, port = host.rsplit(sep=':')
         conn = hive.Connection(host=host_name, port=port, username=user, password=password, database=database,
                                configuration=configuration, auth=auth, kerberos_service_name=kerberos_service_name,
-                               thrift_transport=thrift_transport)
+                               thrift_transport=thrift_transport, **kwargs)
         # return a pandas DataFrame
         if canonical.lower().endswith('pandas'):
             return pd.read_sql(query, conn)

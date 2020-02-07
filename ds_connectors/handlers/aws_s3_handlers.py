@@ -92,7 +92,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
                                                                          _cc.path[1:], code))
         return s3_object.get('LastModified', 0)
 
-    def load_canonical(self) -> [pd.DataFrame, dict]:
+    def load_canonical(self, **kwargs) -> [pd.DataFrame, dict]:
         """Loads the canonical dataset, returning a Pandas DataFrame. This method utilises the pandas
         'pd.read_' methods and directly passes the kwargs to these methods.
 
@@ -111,6 +111,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         _, _, _ext = _cc.address.rpartition('.')
         cc_params = _cc.kwargs
         cc_params.update(_cc.query)  # Update kwargs with those in the uri query
+        cc_params.update(kwargs)     # Update with any passed though the call
         # pop all the extra params
         encoding = cc_params.pop('encoding', 'utf-8')
         file_type = cc_params.pop('file_type', _ext if len(_ext) > 0 else 'dsv')
@@ -156,7 +157,7 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
             - This does not use the AWS S3 Multipart Upload and is limited to 5GB files
     """
 
-    def persist_canonical(self, canonical: [pd.DataFrame, dict]) -> bool:
+    def persist_canonical(self, canonical: [pd.DataFrame, dict], **kwargs) -> bool:
         """ persists either the canonical dataset.
 
         Extra Parameters in the ConnectorContract kwargs:
@@ -168,7 +169,7 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
         if not isinstance(self.connector_contract, ConnectorContract):
             return False
         _uri = self.connector_contract.address
-        return self.backup_canonical(uri=_uri, canonical=canonical)
+        return self.backup_canonical(uri=_uri, canonical=canonical, **kwargs)
 
     def backup_canonical(self, canonical: [pd.DataFrame, dict], uri: str, **kwargs) -> bool:
         """ persists the canonical dataset as a backup to the specified URI resource. Note that only the

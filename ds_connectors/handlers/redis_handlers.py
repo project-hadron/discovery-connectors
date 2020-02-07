@@ -20,7 +20,7 @@ class RedisSourceHandler(AbstractSourceHandler):
     def exists(self) -> bool:
         pass
 
-    def load_canonical(self) -> dict:
+    def load_canonical(self, **kwargs) -> dict:
         """ returns the canonical dataset based on the source contract
             The canonical in this instance is a dictionary that has the headers as the key and then
             the ordered list of values for that header
@@ -29,9 +29,12 @@ class RedisSourceHandler(AbstractSourceHandler):
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The Connector Contract is not valid")
         # this supports redis hmap only...
-        match = self.connector_contract.kwargs.get('match', '*')
-        count = self.connector_contract.kwargs.get('count', 1000)
-        keys = self.connector_contract.kwargs.get('keys')
+        cc_params = self.connector_contract.kwargs
+        cc_params.update(kwargs)     # Update with any passed though the call
+
+        match = cc_params.get('match', '*')
+        count = cc_params.get('count', 1000)
+        keys = cc_params.get('keys')
         if not keys or len(keys) == 0:
             raise ValueError("RedisConnector requires an array of 'keys'")
         try:
@@ -69,11 +72,11 @@ class RedisSourceHandler(AbstractSourceHandler):
 
 
 class RedisPersistHandler(RedisSourceHandler, AbstractPersistHandler):
-    def persist_canonical(self, canonical: pd.DataFrame) -> bool:
+    def persist_canonical(self, canonical: pd.DataFrame, **kwargs) -> bool:
         """ persists the canonical dataset """
         if not isinstance(self.connector_contract, ConnectorContract):
             return False
-        return self.backup_canonical(canonical=canonical, uri=self.connector_contract.uri)
+        return self.backup_canonical(canonical=canonical, uri=self.connector_contract.uri, **kwargs)
 
     def remove_canonical(self) -> bool:
         if not isinstance(self.connector_contract, ConnectorContract):

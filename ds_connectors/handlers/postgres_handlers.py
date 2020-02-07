@@ -19,7 +19,7 @@ class PostgresSourceHandler(AbstractSourceHandler):
     def exists(self) -> bool:
         return True
 
-    def load_canonical(self) -> dict:
+    def load_canonical(self, **kwargs) -> dict:
         """ returns the canonical dataset based on the source contract
             The canonical in this instance is a dictionary that has the headers as the key and then
             the ordered list of values for that header
