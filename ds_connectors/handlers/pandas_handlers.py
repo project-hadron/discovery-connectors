@@ -10,7 +10,7 @@ try:
 except ImportError:
     import pickle
 
-from ds_foundation.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 
 __author__ = 'Darryl Oatridge'
 

@@ -1,6 +1,6 @@
 import pandas as pd
 from pyhive import hive
-from ds_foundation.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
 
 __author__ = 'Darryl Oatridge, Neil Pasricha'
 

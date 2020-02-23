@@ -1,5 +1,5 @@
 import psycopg2
-from ds_foundation.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
 
 __author__ = 'Johan Gielstra'
 

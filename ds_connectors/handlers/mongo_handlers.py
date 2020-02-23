@@ -1,6 +1,6 @@
 # Developing Mongo Persist Handler
 import pandas as pd
-from ds_foundation.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 from pymongo import MongoClient
 
 __author__ = 'Darryl Oatridge, Omar Eid'
