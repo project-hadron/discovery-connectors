@@ -66,6 +66,7 @@ setup(
                     'boto3': ['boto3'],
                     'pandas': ['pandas>0.25'],
                     'pyyaml': ['pyyaml'],
+                    'managed_content': ['tenacity', 'pyyaml', 'requests', 'urllib3']
                     },
     test_suite='tests',
 )
