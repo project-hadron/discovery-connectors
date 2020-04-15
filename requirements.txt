@@ -8,6 +8,7 @@ discovery-foundation
 pyyaml
 pymongo
 boto3
+botocore
 pandas
 pyhive
 psycopg2

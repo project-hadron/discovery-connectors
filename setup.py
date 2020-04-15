@@ -58,12 +58,12 @@ setup(
     package_data={},
     python_requires='>=3.6',
     install_requires=[
-        'discovery-foundation',
+        'aistac-foundation',
     ],
     extras_require={'postgress': ['psycopg2'],
                     'pyhive': ['pyhive'],
                     'pymongo': ['pymongo'],
-                    'boto3': ['boto3'],
+                    'boto3': ['boto3', 'botocore'],
                     'pandas': ['pandas>0.25'],
                     'pyyaml': ['pyyaml'],
                     'managed_content': ['tenacity', 'pyyaml', 'requests', 'urllib3']
