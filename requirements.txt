@@ -4,7 +4,7 @@
 
 ###### Requirements without Version Specifiers ######
 setuptools
-discovery-foundation
+aistac-foundation
 pyyaml
 pymongo
 boto3
