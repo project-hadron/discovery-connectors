@@ -1,7 +1,6 @@
 # Developing Mongo Persist Handler
 import pandas as pd
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
-from pymongo import MongoClient
 
 __author__ = 'Darryl Oatridge, Omar Eid'
 
@@ -9,10 +8,13 @@ __author__ = 'Darryl Oatridge, Omar Eid'
 class MongoSourceHandler(AbstractSourceHandler):
     """ A mongoDB source handler"""
 
+    # import in the Class namespace to remove from the dependency build
+    from pymongo import MongoClient
+
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
         super().__init__(connector_contract)
-        self._mongo_database = MongoClient(self.connector_contract.uri)[self.connector_contract.kwargs.get("database")]
+        self._mongo_database = self.MongoClient(self.connector_contract.uri)[self.connector_contract.kwargs.get("database")]
         self._mongo_collection = self._mongo_database[self.connector_contract.kwargs.get("collection")]
 
     def supported_types(self) -> list:

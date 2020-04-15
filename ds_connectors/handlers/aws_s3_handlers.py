@@ -1,8 +1,6 @@
 import threading
 from io import StringIO, BytesIO
 import pandas as pd
-from botocore.exceptions import ClientError
-import boto3
 try:
     import cPickel as pickle
 except ImportError:
@@ -24,6 +22,10 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             - This does not use the AWS S3 Multipart Upload and is limited to 5GB files
     """
 
+    # import in the Class namespace to remove from the dependency build
+    from botocore.exceptions import ClientError
+    import boto3
+
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the connector_contract dictionary
 
@@ -36,7 +38,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         cc_params.update(connector_contract.query)  # Update kwargs with those in the uri query
         region_name = cc_params.pop('region_name', 'us-east-2')
         profile_name = cc_params.pop('profile_name', 'default')
-        self._session = boto3.Session(region_name=region_name, profile_name=profile_name)
+        self._session = self.boto3.Session(region_name=region_name, profile_name=profile_name)
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -85,7 +87,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         s3_client = self._session.client(_cc.schema)
         try:
             s3_object = s3_client.get_object(Bucket=_cc.netloc, Key=_cc.path[1:], **s3_get_params)
-        except ClientError as e:
+        except self.ClientError as e:
             code = e.response["Error"]["Code"]
             raise ConnectionError("Failed to retrieve the object from region '{}', bucket '{}' "
                                   "Key '{}' with error code '{}'".format(self._session.region_name, _cc.netloc,
@@ -126,7 +128,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         s3_client = self._session.client(_cc.schema)
         try:
             s3_object = s3_client.get_object(Bucket=_cc.netloc, Key=_cc.path[1:], **s3_get_params)
-        except ClientError as e:
+        except self.ClientError as e:
             code = e.response["Error"]["Code"]
             raise ConnectionError("Failed to retrieve the object from region '{}', bucket '{}' "
                                   "Key '{}' with error code '{}'".format(self._session.region_name, _cc.netloc,

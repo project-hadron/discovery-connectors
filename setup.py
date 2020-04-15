@@ -59,6 +59,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'aistac-foundation',
+        'pandas >=0.25',
     ],
     extras_require={'postgress': ['psycopg2'],
                     'hive': ['pyhive'],

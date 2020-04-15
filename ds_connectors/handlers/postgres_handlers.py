@@ -1,4 +1,3 @@
-import psycopg2
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
 
 __author__ = 'Johan Gielstra'
@@ -6,6 +5,9 @@ __author__ = 'Johan Gielstra'
 
 class PostgresSourceHandler(AbstractSourceHandler):
     """ A Postgres Source Handler"""
+
+    # import in the Class namespace to remove from the dependency build
+    import psycopg2
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
@@ -38,7 +40,7 @@ class PostgresSourceHandler(AbstractSourceHandler):
         if connector_type.lower() not in self.supported_types():
             raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
         try:
-            conn = psycopg2.connect(database=database, host=host, port=port, user=user, password=password)
+            conn = self.psycopg2.connect(database=database, host=host, port=port, user=user, password=password)
             cur = conn.cursor()
             cur.execute(query)
             colnames = [desc[0] for desc in cur.description]
@@ -58,7 +60,7 @@ class PostgresSourceHandler(AbstractSourceHandler):
                 row = cur.fetchone()
             cur.close()
             return rtn_dict
-        except (Exception, psycopg2.DatabaseError) as error:
+        except (Exception, self.psycopg2.DatabaseError) as error:
             print(error)
         finally:
             if conn is not None:

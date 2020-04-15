@@ -5,15 +5,7 @@
 ###### Requirements without Version Specifiers ######
 setuptools
 aistac-foundation
-pyyaml
-pymongo
-boto3
-botocore
 pandas
-pyhive
-psycopg2
-urllib3
-requests
 
 # SQl and HTML libs
 #sqlalchemy

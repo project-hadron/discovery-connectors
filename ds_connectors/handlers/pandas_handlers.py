@@ -4,7 +4,6 @@ from contextlib import closing
 import threading
 
 import pandas as pd
-import yaml
 try:
     import cPickel as pickle
 except ImportError:
@@ -21,6 +20,8 @@ class PandasSourceHandler(AbstractSourceHandler):
         but can be a full url
                     uri = <scheme>://<netloc>/[<path>/]<filename.ext>
     """
+    # import in the Class namespace to remove from the dependency build
+    import yaml
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the connector_contract dictionary """
@@ -84,8 +85,7 @@ class PandasSourceHandler(AbstractSourceHandler):
             return requests.head(_cc.address).headers['last-modified']
         return os.path.getmtime(_cc.address) if os.path.exists(_cc.address) else 0
 
-    @staticmethod
-    def _yaml_load(path_file, **kwargs) -> dict:
+    def _yaml_load(self, path_file, **kwargs) -> dict:
         """ loads the YAML file
 
         :param path_file: the name and path of the file
@@ -95,7 +95,7 @@ class PandasSourceHandler(AbstractSourceHandler):
         with threading.Lock():
             try:
                 with closing(open(path_file, mode='r', encoding=encoding)) as ymlfile:
-                    rtn_dict = yaml.safe_load(ymlfile)
+                    rtn_dict = self.yaml.safe_load(ymlfile)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
             if not isinstance(rtn_dict, dict) or not rtn_dict:
@@ -191,8 +191,7 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             return True
         return False
 
-    @staticmethod
-    def _yaml_dump(data, path_file, **kwargs) -> None:
+    def _yaml_dump(self, data, path_file, **kwargs) -> None:
         """ dump YAML file
 
         :param data: the data to persist
@@ -205,7 +204,7 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             # make sure the dump is clean
             try:
                 with closing(open(path_file, mode='w', encoding=encoding)) as ymlfile:
-                    yaml.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
+                    self.yaml.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
         # check the file was created

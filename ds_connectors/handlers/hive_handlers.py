@@ -1,5 +1,4 @@
 import pandas as pd
-from pyhive import hive
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
 
 __author__ = 'Darryl Oatridge, Neil Pasricha'
@@ -7,6 +6,8 @@ __author__ = 'Darryl Oatridge, Neil Pasricha'
 
 class HiveSourceHandler(AbstractSourceHandler):
     """ A Hive source handler"""
+
+    from pyhive import hive
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Handler passing the source_contract dictionary """
@@ -35,7 +36,7 @@ class HiveSourceHandler(AbstractSourceHandler):
         canonical = self.connector_contract.get_key_value('canonical', 'dict')
         query = self.connector_contract.query
         host_name, port = host.rsplit(sep=':')
-        conn = hive.Connection(host=host_name, port=port, username=user, password=password, database=database,
+        conn = self.hive.Connection(host=host_name, port=port, username=user, password=password, database=database,
                                configuration=configuration, auth=auth, kerberos_service_name=kerberos_service_name,
                                thrift_transport=thrift_transport, **kwargs)
         # return a pandas DataFrame

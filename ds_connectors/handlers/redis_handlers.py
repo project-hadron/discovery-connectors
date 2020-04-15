@@ -1,4 +1,3 @@
-import redis
 import pandas as pd
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 
@@ -7,6 +6,9 @@ __author__ = 'Johan Gielstra'
 
 class RedisSourceHandler(AbstractSourceHandler):
     """ A mongoDB source handler"""
+
+    # import in the Class namespace to remove from the dependency build
+    import redis
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
@@ -38,7 +40,7 @@ class RedisSourceHandler(AbstractSourceHandler):
         if not keys or len(keys) == 0:
             raise ValueError("RedisConnector requires an array of 'keys'")
         try:
-            conn = redis.from_url(self.connector_contract.uri)
+            conn = self.redis.from_url(self.connector_contract.uri)
             rtn_dict = {'id': []}
             for rowkey in conn.scan_iter(match, count):
                 """
@@ -102,7 +104,7 @@ class RedisPersistHandler(RedisSourceHandler, AbstractPersistHandler):
             use_index_for_id = True
         if hashprefix is None:
             raise ValueError("RedisPersistHandler requires a `prefix` to be provided")
-        conn = redis.from_url(self.connector_contract.uri)
+        conn = self.redis.from_url(self.connector_contract.uri)
         # TODO if persist_params.get("ordered") is None:
         # ` ordered=persist_params.get("ordered")` is this needed ?
         count = 0
