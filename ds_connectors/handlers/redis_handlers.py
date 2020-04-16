@@ -1,5 +1,6 @@
 import pandas as pd
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
+    HandlerFactory
 
 __author__ = 'Johan Gielstra'
 
@@ -7,11 +8,10 @@ __author__ = 'Johan Gielstra'
 class RedisSourceHandler(AbstractSourceHandler):
     """ A mongoDB source handler"""
 
-    # import in the Class namespace to remove from the dependency build
-    import redis
-
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
+        # required module import
+        self.redis = HandlerFactory.get_module('redis')
         super().__init__(connector_contract)
         self._modified = 0
 

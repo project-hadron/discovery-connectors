@@ -7,7 +7,8 @@ except ImportError:
     import pickle
 
 
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
+    HandlerFactory
 
 __author__ = 'Darryl Oatridge'
 
@@ -23,8 +24,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
     """
 
     # import in the Class namespace to remove from the dependency build
-    from botocore.exceptions import ClientError
-    import boto3
+    # required module import
 
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the connector_contract dictionary
@@ -33,6 +33,8 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             - region_name (optional) session region name
             - profile_name (optional) session shared credentials file profile name
         """
+        self.botocore = HandlerFactory.get_module('botocore.exceptions')
+        self.boto3 = HandlerFactory.get_module('boto3')
         super().__init__(connector_contract)
         cc_params = connector_contract.kwargs
         cc_params.update(connector_contract.query)  # Update kwargs with those in the uri query
@@ -87,7 +89,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         s3_client = self._session.client(_cc.schema)
         try:
             s3_object = s3_client.get_object(Bucket=_cc.netloc, Key=_cc.path[1:], **s3_get_params)
-        except self.ClientError as e:
+        except self.botocore.ClientError as e:
             code = e.response["Error"]["Code"]
             raise ConnectionError("Failed to retrieve the object from region '{}', bucket '{}' "
                                   "Key '{}' with error code '{}'".format(self._session.region_name, _cc.netloc,
@@ -128,7 +130,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         s3_client = self._session.client(_cc.schema)
         try:
             s3_object = s3_client.get_object(Bucket=_cc.netloc, Key=_cc.path[1:], **s3_get_params)
-        except self.ClientError as e:
+        except self.botocore.ClientError as e:
             code = e.response["Error"]["Code"]
             raise ConnectionError("Failed to retrieve the object from region '{}', bucket '{}' "
                                   "Key '{}' with error code '{}'".format(self._session.region_name, _cc.netloc,

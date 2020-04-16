@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import json
-import pkg_resources
 import platform
 import requests
 import sys

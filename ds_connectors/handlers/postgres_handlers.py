@@ -1,4 +1,4 @@
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, HandlerFactory
 
 __author__ = 'Johan Gielstra'
 
@@ -6,11 +6,10 @@ __author__ = 'Johan Gielstra'
 class PostgresSourceHandler(AbstractSourceHandler):
     """ A Postgres Source Handler"""
 
-    # import in the Class namespace to remove from the dependency build
-    import psycopg2
-
     def __init__(self, connector_contract: ConnectorContract):
         """ initialise the Hander passing the source_contract dictionary """
+        # required module import
+        self.psycopg2 = HandlerFactory.get_module('psycopg2')
         super().__init__(connector_contract)
         self._modified = 0
 

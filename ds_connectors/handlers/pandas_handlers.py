@@ -9,7 +9,8 @@ try:
 except ImportError:
     import pickle
 
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
+    HandlerFactory
 
 __author__ = 'Darryl Oatridge'
 
@@ -21,10 +22,10 @@ class PandasSourceHandler(AbstractSourceHandler):
                     uri = <scheme>://<netloc>/[<path>/]<filename.ext>
     """
     # import in the Class namespace to remove from the dependency build
-    import yaml
-
     def __init__(self, connector_contract: ConnectorContract):
-        """ initialise the Hander passing the connector_contract dictionary """
+        """ initialise the Handler passing the connector_contract dictionary """
+        # required module import
+        self.yaml = HandlerFactory.get_module('yaml')
         super().__init__(connector_contract)
 
     def supported_types(self) -> list:
