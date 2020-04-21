@@ -1,16 +1,14 @@
 import os
-import requests
 from contextlib import closing
 import threading
-
 import pandas as pd
-try:
-    import cPickel as pickle
-except ImportError:
-    import pickle
+import requests
+import yaml
+import pickle
+import json
 
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
-    HandlerFactory
+
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 
 __author__ = 'Darryl Oatridge'
 
@@ -21,11 +19,9 @@ class PandasSourceHandler(AbstractSourceHandler):
         but can be a full url
                     uri = <scheme>://<netloc>/[<path>/]<filename.ext>
     """
-    # import in the Class namespace to remove from the dependency build
+
     def __init__(self, connector_contract: ConnectorContract):
-        """ initialise the Handler passing the connector_contract dictionary """
-        # required module import
-        self.yaml = HandlerFactory.get_module('yaml')
+        """ initialise the Hander passing the connector_contract dictionary """
         super().__init__(connector_contract)
 
     def supported_types(self) -> list:
@@ -52,10 +48,10 @@ class PandasSourceHandler(AbstractSourceHandler):
         with threading.Lock():
             if file_type.lower() in ['parquet', 'pq']:
                 rtn_data = pd.read_parquet(_cc.address, **load_params)
-            elif file_type.lower() in ['csv', 'tsv', 'txt']:
+            elif file_type.lower() in ['zip', 'csv', 'tsv', 'txt']:
                 rtn_data = pd.read_csv(_cc.address, **load_params)
             elif file_type.lower() in ['json']:
-                rtn_data = pd.read_json(_cc.address, **load_params)
+                rtn_data = self._json_load(path_file=_cc.address, **load_params)
             elif file_type.lower() in ['xls', 'xlsx']:
                 rtn_data = pd.read_excel(_cc.address, **load_params)
             elif file_type.lower() in ['pkl ', 'pickle']:
@@ -83,10 +79,11 @@ class PandasSourceHandler(AbstractSourceHandler):
             raise ValueError("The Pandas Connector Contract has not been set")
         _cc = self.connector_contract
         if _cc.schema.startswith('http'):
-            return requests.head(_cc.address).headers['last-modified']
+            return requests.head(_cc.address).headers.get('last-modified', 0)
         return os.path.getmtime(_cc.address) if os.path.exists(_cc.address) else 0
 
-    def _yaml_load(self, path_file, **kwargs) -> dict:
+    @staticmethod
+    def _yaml_load(path_file, **kwargs) -> dict:
         """ loads the YAML file
 
         :param path_file: the name and path of the file
@@ -96,7 +93,7 @@ class PandasSourceHandler(AbstractSourceHandler):
         with threading.Lock():
             try:
                 with closing(open(path_file, mode='r', encoding=encoding)) as ymlfile:
-                    rtn_dict = self.yaml.safe_load(ymlfile)
+                    rtn_dict = yaml.safe_load(ymlfile)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
             if not isinstance(rtn_dict, dict) or not rtn_dict:
@@ -112,6 +109,13 @@ class PandasSourceHandler(AbstractSourceHandler):
         with threading.Lock():
             with closing(open(path_file, mode='rb')) as f:
                 return pickle.load(f, fix_imports=fix_imports, encoding=encoding, errors=errors)
+
+    @staticmethod
+    def _json_load(path_file: str, **kwargs) -> [dict, pd.DataFrame]:
+        """ loads a pickle file """
+        with threading.Lock():
+            with closing(open(path_file, mode='r')) as f:
+                return json.load(f, **kwargs)
 
 
 class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
@@ -143,9 +147,8 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             return False
         _cc = self.connector_contract
         _address = _cc.parse_address(uri=uri)
-        persist_params = _cc.kwargs
+        persist_params = kwargs if isinstance(kwargs, dict) else _cc.kwargs
         persist_params.update(_cc.parse_query(uri=uri))
-        persist_params.update(kwargs)
         _, _, _ext = _address.rpartition('.')
         if not self.connector_contract.schema.startswith('http'):
             _path, _ = os.path.split(_address)
@@ -158,21 +161,19 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             with threading.Lock():
                 canonical.to_parquet(_address, **write_params)
             return True
-        # json
-        if file_type.lower() in ['json']:
-            with threading.Lock():
-                canonical.to_json(_address, **write_params)
-            return True
         # csv
         if file_type.lower() in ['csv', 'tsv', 'txt']:
             _index = write_params.pop('index', False)
             with threading.Lock():
                 canonical.to_csv(_address, index=_index, **write_params)
             return True
+        # json
+        if file_type.lower() in ['json']:
+            self._json_dump(data=canonical, path_file=_address, **write_params)
+            return True
         # pickle
         if file_type.lower() in ['pkl', 'pickle']:
-            with threading.Lock():
-                self._pickle_dump(data=canonical, path_file=_address, **write_params)
+            self._pickle_dump(data=canonical, path_file=_address, **write_params)
             return True
         # yaml
         if file_type.lower() in ['yml', 'yaml']:
@@ -192,7 +193,8 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             return True
         return False
 
-    def _yaml_dump(self, data, path_file, **kwargs) -> None:
+    @staticmethod
+    def _yaml_dump(data, path_file, **kwargs) -> None:
         """ dump YAML file
 
         :param data: the data to persist
@@ -205,7 +207,7 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             # make sure the dump is clean
             try:
                 with closing(open(path_file, mode='w', encoding=encoding)) as ymlfile:
-                    self.yaml.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
+                    yaml.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
         # check the file was created
@@ -219,3 +221,10 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
         with threading.Lock():
             with closing(open(path_file, mode='wb')) as f:
                 pickle.dump(data, f, protocol=protocol, fix_imports=fix_imports)
+
+    @staticmethod
+    def _json_dump(data, path_file: str, **kwargs) -> None:
+        """ dumps a pickle file"""
+        with threading.Lock():
+            with closing(open(path_file, mode='w')) as f:
+                json.dump(data, f, **kwargs)
