@@ -1,11 +1,8 @@
 import threading
 from io import StringIO, BytesIO
 import pandas as pd
-try:
-    import cPickel as pickle
-except ImportError:
-    import pickle
-
+import pickle
+import json
 
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
     HandlerFactory
@@ -142,7 +139,10 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             if file_type.lower() in ['csv', 'tsv', 'txt']:
                 return pd.read_csv(StringIO(resource_body.decode(encoding)), **read_params)
             if file_type.lower() in ['json']:
-                return pd.read_json(StringIO(resource_body.decode(encoding)), **read_params)
+                load_format = read_params.pop('load_format', 'pandas')
+                if load_format == 'pandas':
+                    return pd.read_json(StringIO(resource_body.decode(encoding)), **read_params)
+                return json.load(StringIO(resource_body.decode(encoding)), **read_params)
             if file_type.lower() in ['pkl ', 'pickle']:
                 fix_imports = read_params.pop('fix_imports', True)
                 encoding = read_params.pop('encoding', 'ASCII')
@@ -220,7 +220,11 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
         elif file_type.lower() in ['json']:
             byte_obj = StringIO()
             with threading.Lock():
-                canonical.to_json(byte_obj, **write_params)
+                if isinstance(canonical, pd.DataFrame):
+                    canonical.to_json(byte_obj, **write_params)
+                else:
+                    encode = write_params.pop('encode', 'UTF-8')
+                    byte_obj = (bytes(json.dumps(canonical, **s3_put_params).encode(encode)))
                 s3_client.put_object(Bucket=bucket, Key=path[1:], Body=byte_obj.getvalue(), **s3_put_params)
         # parquet
         elif file_type.lower() in ['parquet', 'pq', 'pqt']:
