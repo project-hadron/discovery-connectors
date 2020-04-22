@@ -99,10 +99,12 @@ class AwsS3SourceHandler(AbstractSourceHandler):
 
         Extra Parameters in the ConnectorContract kwargs:
             - file_type: (optional) the type of the source file. if not set, inferred from the file extension
+                            by default json files load as dict, to load as pandas use read_params '{as_dataframe: True}
             - encoding: (optional) the encoding of the s3 object body. Default 'utf-8'
             - s3_get_params: (optional) a dictionary of additional s3 client parameters directly passed to 'get_object'
             - read_params: (optional) value pair dict of parameters to pass to the read methods. Underlying
                            read methods the parameters are passed to are all pandas 'read_*', e.g. pd.read_csv
+
         """
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The S3 Source Connector Contract has not been set correctly")
