@@ -115,7 +115,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         cc_params.update(kwargs)     # Update with any passed though the call
         # pop all the extra params
         encoding = cc_params.pop('encoding', 'utf-8')
-        file_type = cc_params.pop('file_type', _ext if len(_ext) > 0 else 'dsv')
+        file_type = cc_params.pop('file_type', _ext if len(_ext) > 0 else 'pickle')
         s3_get_params = cc_params.pop('s3_get_params', {})
         read_params = cc_params.pop('read_params', {})
         if file_type.lower() not in self.supported_types():
@@ -139,8 +139,8 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             if file_type.lower() in ['csv', 'tsv', 'txt']:
                 return pd.read_csv(StringIO(resource_body.decode(encoding)), **read_params)
             if file_type.lower() in ['json']:
-                load_format = read_params.pop('load_format', 'pandas')
-                if load_format == 'pandas':
+                as_dataframe = read_params.pop('as_dataframe', False)
+                if as_dataframe:
                     return pd.read_json(StringIO(resource_body.decode(encoding)), **read_params)
                 return json.load(StringIO(resource_body.decode(encoding)), **read_params)
             if file_type.lower() in ['pkl ', 'pickle']:
@@ -222,10 +222,11 @@ class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
             with threading.Lock():
                 if isinstance(canonical, pd.DataFrame):
                     canonical.to_json(byte_obj, **write_params)
+                    body = byte_obj.getvalue()
                 else:
                     encode = write_params.pop('encode', 'UTF-8')
-                    byte_obj = (bytes(json.dumps(canonical, **s3_put_params).encode(encode)))
-                s3_client.put_object(Bucket=bucket, Key=path[1:], Body=byte_obj.getvalue(), **s3_put_params)
+                    body = (bytes(json.dumps(canonical, **s3_put_params).encode(encode)))
+                s3_client.put_object(Bucket=bucket, Key=path[1:], Body=body, **s3_put_params)
         # parquet
         elif file_type.lower() in ['parquet', 'pq', 'pqt']:
             _index = write_params.pop('index', False)
