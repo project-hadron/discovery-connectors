@@ -95,6 +95,8 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         _cc = self.connector_contract
         load_params = _cc.kwargs
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
+        load_params.pop('token', None)
+        load_params.pop('api_endpoint', None)
         _, _, _ext = _cc.address.rpartition('.')
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
         with threading.Lock():
@@ -173,6 +175,8 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         _uri_cc = ConnectorContract(uri, module_name=_cc.module_name, handler=_cc.handler)
         load_params = _cc.kwargs
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
+        load_params.pop('token', None)
+        load_params.pop('api_endpoint', None)
         mc_key = self.mc_key(_uri_cc)
         _, _, _ext = _uri_cc.address.rpartition('.')
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
