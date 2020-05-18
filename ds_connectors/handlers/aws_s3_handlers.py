@@ -20,11 +20,8 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             - This does not use the AWS S3 Multipart Upload and is limited to 5GB files
     """
 
-    # import in the Class namespace to remove from the dependency build
-    # required module import
-
     def __init__(self, connector_contract: ConnectorContract):
-        """ initialise the Hander passing the connector_contract dictionary
+        """ initialise the Handler passing the connector_contract dictionary
 
         Extra Parameters in the ConnectorContract kwargs:
             - region_name (optional) session region name
@@ -41,7 +38,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['parquet', 'csv', 'json', 'pickle']
+        return ['parquet', 'csv', 'tsv', 'txt', 'json', 'pickle']
 
     def exists(self) -> bool:
         """ Returns True is the file exists
