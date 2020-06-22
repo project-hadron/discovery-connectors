@@ -1,0 +1,2238 @@
+{
+  "info": {
+    "title": "Cortex Po1-v1 APIs",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/profile/{profileId}": {
+      "delete": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "What is the id of the profile we are interested in deleting?",
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "only delete profile data for this schema",
+            "explode": true,
+            "in": "query",
+            "name": "schema",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Profile deletion message."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Deleting a specific profile"
+      },
+      "get": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "What is the id of the profile we are interested in?",
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "only return profiles for this comma separated list of schema names",
+            "explode": true,
+            "in": "query",
+            "name": "schemaNames",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "only consider the following comma seperated list of attributes",
+            "explode": true,
+            "in": "query",
+            "name": "attributes",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "return historic profile attribute values, default false",
+            "explode": true,
+            "in": "query",
+            "name": "historic",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "limit the number of historical vals returned per attr",
+            "explode": true,
+            "in": "query",
+            "name": "historicValsPerAttrLimit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "limit the version of the profile",
+            "explode": true,
+            "in": "query",
+            "name": "versionLimit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            },
+            "description": "A specific profile."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Getting a specific profile."
+      }
+    },
+    "/profiles": {
+      "get": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "Query filter for attributes in MongoDB query format",
+            "explode": true,
+            "in": "query",
+            "name": "filter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "sorting for attributes in MongoDB sort params format",
+            "explode": true,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "limit the number of results to this number",
+            "explode": true,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "skip this number of results",
+            "explode": true,
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of profile summaries."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Getting Multiple Profiles"
+      }
+    },
+    "/profile-cache": {
+      "delete": {
+        "description": "        ",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "example": [
+                  "1",
+                  "2"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "What profiles do we want to reset the cache for?",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Profile cache flush messages."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Flushing the cache for a set of profiles"
+      }
+    },
+    "/profile-versions/{profileId}": {
+      "get": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "What is the id of the profile we want to list versions for?",
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "limit the number of results to this number",
+            "explode": true,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "skip this number of results",
+            "explode": true,
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "ISO UTC Date to query versions before (query will incldue this date)",
+            "explode": true,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "ISO UTC Date to query versions after (query will incldue this date)",
+            "explode": true,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "only return profiles for this comma separated list of schema names",
+            "explode": true,
+            "in": "query",
+            "name": "schemaNames",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileVersionSummary"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of versions on a profile."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listing versions on a profile."
+      }
+    },
+    "/profiles/schemas/{schemaId}": {
+      "delete": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "What is the id of the schema we want to delete?",
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Getting a specific profile schema."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Deleting a specific profile schema."
+      },
+      "get": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "What is the id of the schema we want to retreive?",
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Getting a specific profile schema."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Getting a specific profile schema."
+      }
+    },
+    "/profiles/schemas": {
+      "post": {
+        "description": "        ",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileSchema"
+              }
+            }
+          },
+          "description": "What schema are  we saving to the backend?",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSchema"
+                }
+              }
+            },
+            "description": "The Profile Schema that was saved."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Creating a new profile schema."
+      },
+      "get": {
+        "description": "        ",
+        "parameters": [
+          {
+            "description": "Query filter for schemas in MongoDB query format",
+            "explode": true,
+            "in": "query",
+            "name": "filter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "sorting for schemas in MongoDB sort params format",
+            "explode": true,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "limit the number of results to this number",
+            "explode": true,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "skip this number of results",
+            "explode": true,
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileSchema"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Listing available schemas on a profile."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listing all available profile schemas."
+      }
+    },
+    "/events": {
+      "post": {
+        "summary": "Publish an entity event or batch of entity events to the Cortex Graph.",
+        "description": "        ",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "example": [
+                  {
+                    "entityId": "p123",
+                    "entityType": "cortex/user",
+                    "event": "name",
+                    "eventLabel": null,
+                    "eventTime": 1588053946000,
+                    "meta": {},
+                    "properties": {
+                      "value": "Jack"
+                    },
+                    "source": null
+                  }
+                ],
+                "items": {
+                  "$ref": "#/components/schemas/EntityEvent"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "What events are we updating from the backend?",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Publish an entity event or batch of entity events to the Cortex Graph."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Query the Entity Event Store.",
+        "description": "        ",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntityEvent"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "A list of Entity Events."
+          }
+        },
+        "parameters": [
+          {
+            "description": "Query filter for events in MongoDB query format",
+            "explode": true,
+            "in": "query",
+            "name": "filter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "sorting for events in MongoDB sort params format",
+            "explode": true,
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "limit the number of results to this number",
+            "explode": true,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          },
+          {
+            "description": "skip this number of results",
+            "explode": true,
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "style": "form"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "openapi": "3.0.0",
+  "tags": [],
+  "components": {
+    "schemas": {
+      "EntityEvent": {
+        "properties": {
+          "event": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "entityId": {
+            "type": "string",
+            "description": "Does this event relate an entity to another entity?"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "What is the type of the entity?"
+          },
+          "properties": {
+            "type": "object",
+            "description": "What are the properties associated with this event?"
+          },
+          "meta": {
+            "type": "object",
+            "description": "What is custom metadata associated with this event?"
+          },
+          "eventLabel": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "eventTime": {
+            "type": "integer",
+            "format": "int32",
+            "description": "When did the event occur?"
+          },
+          "source": {
+            "$ref": "#/components/schemas/EventSource",
+            "description": "What is the name of the event?"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "What is id for this event?"
+          },
+          "triggerId": {
+            "type": "string",
+            "description": "What is id of the occurrence that triggered this event?"
+          }
+        }
+      },
+      "ProfileAttribute": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Which profile is the attribute applicable to?"
+          },
+          "attributeKey": {
+            "type": "string",
+            "description": "What is the unqiue key for the attribute that distinguishes it from the rest of the attributes captured w.r.t the profile?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          },
+          "attributeValue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ListAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentileAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentageAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/StatisticalSummaryAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/NumberAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/TotalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/CounterAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DecimalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/IntegerAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DimensionalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DatetimeAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityRelationshipAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRelationshipAttributeValue"
+              }
+            ],
+            "description": "What value is captured by the attribute?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "Which type of profile does this attribute apply for? (is it a company age vs a person age)"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32",
+            "description": "At what version of the profile was this attribute inserted?"
+          },
+          "appliesOn": {
+            "type": "string",
+            "description": "At what point in time did this attribute become true."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          }
+        }
+      },
+      "Profile": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "What is the id of the profile?"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What version of attributes is this profile based off of?"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/DeclaredProfileAttribute"
+                },
+                {
+                  "$ref": "#/components/schemas/ObservedProfileAttribute"
+                },
+                {
+                  "$ref": "#/components/schemas/InferredProfileAttribute"
+                },
+                {
+                  "$ref": "#/components/schemas/AssignedProfileAttribute"
+                }
+              ]
+            },
+            "description": "What are all of the attribute in the profile along with their latest values?"
+          },
+          "profileSchema": {
+            "type": "string",
+            "description": "What schema was used to build this profile?"
+          }
+        }
+      },
+      "ProfileSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What is a unqiue name for this piece of data?"
+          },
+          "title": {
+            "type": "string",
+            "description": "What is a UI friendly short name for this piece of data?"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is the detailed explanation of the purpose of this piece of data?"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileAttributeSchema"
+            },
+            "description": "What attributes are applicable to the profile schema?"
+          },
+          "attributeTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileTagSchema"
+            },
+            "description": "What tags are applicable to attributes in the profile schema?"
+          },
+          "facets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileFacetSchema"
+            },
+            "description": "How does the schema define how tags are grouped?"
+          },
+          "taxonomy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileTaxonomySchema"
+            },
+            "description": "How does the schema define how attributes are grouped?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "What type of profile adheres to this schema?"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What tags are applicable to this CAMEL resource?"
+          },
+          "camel": {
+            "type": "string",
+            "description": "What CAMEL spec does this piece of data adhere to?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "_version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What is the schema's current version"
+          },
+          "id": {
+            "type": "string",
+            "description": "What is the id of the schema?"
+          }
+        }
+      },
+      "ProfileSummary": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "What is the id for this profile?"
+          },
+          "profileSchema": {
+            "type": "string",
+            "description": "What is the id of the schema applied to this profile?"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many modifications have been made to the profile?"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When was the most recent attribute appended to this profile?"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was the first attribute appended to this profile?"
+          }
+        }
+      },
+      "ProfileVersionSummary": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "What is the id of the profile this version is relevant to?"
+          },
+          "profileSchema": {
+            "type": "string",
+            "description": "What is the id of the schema that the profile adheres to?"
+          },
+          "version": {
+            "type": "string",
+            "description": "What is the version number of the profile?"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          }
+        }
+      },
+      "ProfileAttributeSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What is a unqiue name for this piece of data?"
+          },
+          "type": {
+            "type": "string",
+            "description": "What is the type of the profile attribute?"
+          },
+          "valueType": {
+            "$ref": "#/components/schemas/ProfileValueTypeSummary",
+            "description": "What is the type of the profile attribute?"
+          },
+          "label": {
+            "type": "string",
+            "description": "What is a UI friendly short name for this piece of data?"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is the detailed explanation of the purpose of this piece of data?"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What questions is this attribute capable of answering?"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What are the id's of all the tags that apply to this attribute?"
+          }
+        }
+      },
+      "ProfileTagSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What is a unqiue name for this piece of data?"
+          },
+          "label": {
+            "type": "string",
+            "description": "What is a UI friendly short name for this piece of data?"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is the detailed explanation of the purpose of this piece of data?"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "group": {
+            "type": "string",
+            "description": "What Facet Group does this tag belong?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ProfileFacetSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What is a unqiue name for this piece of data?"
+          },
+          "label": {
+            "type": "string",
+            "description": "What is a UI friendly short name for this piece of data?"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is the detailed explanation of the purpose of this piece of data?"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What are the id's of all the tags that apply to this group?"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ProfileTaxonomySchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What is a unqiue name for this piece of data?"
+          },
+          "label": {
+            "type": "string",
+            "description": "What is a UI friendly short name for this piece of data?"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is the detailed explanation of the purpose of this piece of data?"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What are the id's of the tags that need to be collectively found on attributes that to belong to this group?"
+          },
+          "parent": {
+            "type": "string",
+            "description": "Does this group extend a parent group of attributes ...?"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ProfileValueTypeSummary": {
+        "properties": {
+          "outerType": {
+            "type": "string",
+            "description": "What is the primary type of an attribute's value?"
+          },
+          "innerTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileValueTypeSummary"
+            },
+            "description": "What are the inner types of an attribute's value?"
+          }
+        }
+      },
+      "DeclaredProfileAttribute": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Which profile is the attribute applicable to?"
+          },
+          "attributeKey": {
+            "type": "string",
+            "description": "What is the unqiue key for the attribute that distinguishes it from the rest of the attributes captured w.r.t the profile?"
+          },
+          "attributeValue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ListAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentileAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentageAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/StatisticalSummaryAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/NumberAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/TotalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/CounterAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DecimalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/IntegerAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DimensionalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DatetimeAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityRelationshipAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRelationshipAttributeValue"
+              }
+            ],
+            "description": "What value is captured by the attribute?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "Which type of profile does this attribute apply for? (is it a company age vs a person age)"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32",
+            "description": "At what version of the profile was this attribute inserted?"
+          },
+          "appliesOn": {
+            "type": "string",
+            "description": "At what point in time did this attribute become true."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "classification": {
+            "type": "string",
+            "description": "What is the classification of this profile attribute?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "InferredProfileAttribute": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Which profile is the attribute applicable to?"
+          },
+          "attributeKey": {
+            "type": "string",
+            "description": "What is the unqiue key for the attribute that distinguishes it from the rest of the attributes captured w.r.t the profile?"
+          },
+          "attributeValue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ListAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentileAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentageAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/StatisticalSummaryAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/NumberAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/TotalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/CounterAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DecimalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/IntegerAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DimensionalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DatetimeAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityRelationshipAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRelationshipAttributeValue"
+              }
+            ],
+            "description": "What value is captured by the attribute?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "Which type of profile does this attribute apply for? (is it a company age vs a person age)"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32",
+            "description": "At what version of the profile was this attribute inserted?"
+          },
+          "appliesOn": {
+            "type": "string",
+            "description": "At what point in time did this attribute become true."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "classification": {
+            "type": "string",
+            "description": "What is the classification of this profile attribute?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ObservedProfileAttribute": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Which profile is the attribute applicable to?"
+          },
+          "attributeKey": {
+            "type": "string",
+            "description": "What is the unqiue key for the attribute that distinguishes it from the rest of the attributes captured w.r.t the profile?"
+          },
+          "attributeValue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ListAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentileAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentageAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/StatisticalSummaryAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/NumberAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/TotalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/CounterAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DecimalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/IntegerAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DimensionalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DatetimeAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityRelationshipAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRelationshipAttributeValue"
+              }
+            ],
+            "description": "What value is captured by the attribute?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "Which type of profile does this attribute apply for? (is it a company age vs a person age)"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32",
+            "description": "At what version of the profile was this attribute inserted?"
+          },
+          "appliesOn": {
+            "type": "string",
+            "description": "At what point in time did this attribute become true."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "classification": {
+            "type": "string",
+            "description": "What is the classification of this profile attribute?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "AssignedProfileAttribute": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Which profile is the attribute applicable to?"
+          },
+          "attributeKey": {
+            "type": "string",
+            "description": "What is the unqiue key for the attribute that distinguishes it from the rest of the attributes captured w.r.t the profile?"
+          },
+          "attributeValue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/BooleanAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ListAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentileAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/PercentageAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/StatisticalSummaryAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/NumberAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/TotalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/CounterAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DecimalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/IntegerAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DimensionalAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/DatetimeAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/EntityRelationshipAttributeValue"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRelationshipAttributeValue"
+              }
+            ],
+            "description": "What value is captured by the attribute?"
+          },
+          "profileType": {
+            "type": "string",
+            "description": "Which type of profile does this attribute apply for? (is it a company age vs a person age)"
+          },
+          "id": {
+            "type": "string",
+            "description": "How can this piece of data be uniquely identified?"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32",
+            "description": "At what version of the profile was this attribute inserted?"
+          },
+          "appliesOn": {
+            "type": "string",
+            "description": "At what point in time did this attribute become true."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When was this piece of data created?"
+          },
+          "classification": {
+            "type": "string",
+            "description": "What is the classification of this profile attribute?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "StringAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "What is the value of the string itself?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "BooleanAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What is the value of the boolean itself?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "EntityAttributeValue": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/EntityEvent",
+            "description": "What are the properties of the entity?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ListAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "array",
+            "description": "What is the value of the object itself?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "PercentileAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the numeric value of the percentile?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "PercentageAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "What numeric value of the percentage?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "StatisticalSummaryAttributeValue": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/StatisticalSummaryValue",
+            "description": "What is the statistical summary for a given range of data?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "NumberAttributeValue": {
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "What numeric value is captured by this attribute value?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "TotalAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the current total?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "CounterAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What is the current count?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "DecimalAttributeValue": {
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "What numeric value is captured by this attribute value?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "IntegerAttributeValue": {
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "What numeric value is captured by this attribute value?"
+          },
+          "weight": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "How relevant is this piece of information?"
+          },
+          "unitId": {
+            "type": "string",
+            "description": "What is the unique id of the unit? i.e USD, GBP, %, ..."
+          },
+          "unitContext": {
+            "type": "string",
+            "description": "What type of unit is this? i.e currency, population of country, ..."
+          },
+          "unitTitle": {
+            "type": "string",
+            "description": "What is the symbol desired to represent the unit?"
+          },
+          "unitIsPrefix": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Should the symbol be before or after the unit?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "WeightAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "DimensionalAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dimension"
+            },
+            "description": "What are the different dimensions captured in the attribute value?"
+          },
+          "contextOfDimension": {
+            "type": "string",
+            "description": "What type are the dimensions?"
+          },
+          "contextOfDimensionValue": {
+            "type": "string",
+            "description": "What type are the values associated with the dimension?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "DatetimeAttributeValue": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "How relevant is this piece of information?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "EntityRelationshipAttributeValue": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/EntityRelationshipEvent",
+            "description": "What is the value of the entity relationship itself?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ProfileRelationshipAttributeValue": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/ProfileRelationshipEvent",
+            "description": "What is the value of the profile relationship itself?"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "How relevant is this piece of information?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "ProfileLink": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "What is the id of the profile that was linked?"
+          },
+          "schemaId": {
+            "type": "string",
+            "description": "What schema does the linked profile adhere to?"
+          },
+          "profileVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Was a specific version of the profile linked?"
+          },
+          "context": {
+            "type": "string",
+            "description": "What is the type of this piece of data?"
+          }
+        }
+      },
+      "Dimension": {
+        "properties": {
+          "dimensionId": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileLink"
+              }
+            ],
+            "description": "What entity does this dimension represent?"
+          },
+          "dimensionValue": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "integer",
+                "format": "int32"
+              },
+              {
+                "type": "number",
+                "format": "float"
+              }
+            ],
+            "description": "What is the value of this dimension?"
+          }
+        }
+      },
+      "StatisticalSummaryValue": {
+        "properties": {
+          "datapoints": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many datapoints were considered?"
+          },
+          "min": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the minimum value considered in the data points?"
+          },
+          "max": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the maximum value considered in the data points?"
+          },
+          "average": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the average of the data points?"
+          },
+          "stddev": {
+            "type": "number",
+            "format": "float",
+            "description": "What is the std deviation of the data points?"
+          }
+        }
+      },
+      "EventSource": {
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "rights": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "sector": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "EntityRelationshipEvent": {
+        "properties": {
+          "event": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "entityId": {
+            "type": "string",
+            "description": "Does this event relate an entity to another entity?"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "What is the type of the entity?"
+          },
+          "targetEntityId": {
+            "type": "string",
+            "description": "Does this event relate an entity to another entity?"
+          },
+          "targetEntityType": {
+            "type": "string",
+            "description": "What is the type of entity this event relates to?"
+          },
+          "properties": {
+            "type": "object",
+            "description": "What are the properties associated with this event?"
+          },
+          "meta": {
+            "type": "object",
+            "description": "What is custom metadata associated with this event?"
+          },
+          "eventLabel": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "eventTime": {
+            "type": "integer",
+            "format": "int32",
+            "description": "When did the event occur?"
+          },
+          "source": {
+            "$ref": "#/components/schemas/EventSource",
+            "description": "What is the name of the event?"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "What is id for this event?"
+          },
+          "triggerId": {
+            "type": "string",
+            "description": "What is id of the occurrence that triggered this event?"
+          }
+        }
+      },
+      "ProfileRelationshipEvent": {
+        "properties": {
+          "event": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "entityId": {
+            "type": "string",
+            "description": "Does this event relate an entity to another entity?"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "What is the type of the entity?"
+          },
+          "targetEntityId": {
+            "type": "string",
+            "description": "Does this event relate an entity to another entity?"
+          },
+          "targetEntityType": {
+            "type": "string",
+            "description": "What is the type of entity this event relates to?"
+          },
+          "targetLink": {
+            "$ref": "#/components/schemas/ProfileLink",
+            "description": "What profiles does this relationship target?"
+          },
+          "properties": {
+            "type": "object",
+            "description": "What are the properties associated with this event?"
+          },
+          "meta": {
+            "type": "object",
+            "description": "What is custom metadata associated with this event?"
+          },
+          "eventLabel": {
+            "type": "string",
+            "description": "What is the name of the event?"
+          },
+          "eventTime": {
+            "type": "integer",
+            "format": "int32",
+            "description": "When did the event occur?"
+          },
+          "source": {
+            "$ref": "#/components/schemas/EventSource",
+            "description": "What is the name of the event?"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "What is id for this event?"
+          },
+          "triggerId": {
+            "type": "string",
+            "description": "What is id of the occurrence that triggered this event?"
+          }
+        }
+      }
+    },
+    "parameters": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5000/v3/graph"
+    },
+    {
+      "url": "https://api.dci-dev.dev-eks.insights.ai/v3/graph"
+    }
+  ]
+}

@@ -3,12 +3,11 @@ from contextlib import closing
 import threading
 import pandas as pd
 import requests
-import yaml
 import pickle
 import json
 
-
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
 
 __author__ = 'Darryl Oatridge'
 
@@ -34,8 +33,6 @@ class PandasSourceHandler(AbstractSourceHandler):
 
         Extra Parameters in the ConnectorContract kwargs:
             - file_type: (optional) the type of the source file. if not set, inferred from the file extension
-            - read_params: (optional) value pair dict of parameters to pass to the read methods. Underlying
-                           read methods the parameters are passed to are all pandas 'read_*', e.g. pd.read_csv
         """
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The Pandas Connector Contract has not been set")
@@ -89,11 +86,12 @@ class PandasSourceHandler(AbstractSourceHandler):
         :param path_file: the name and path of the file
         :return: a dictionary
         """
+        module = HandlerFactory.get_module('yaml')
         encoding = kwargs.pop('encoding', 'utf-8')
         with threading.Lock():
             try:
                 with closing(open(path_file, mode='r', encoding=encoding)) as ymlfile:
-                    rtn_dict = yaml.safe_load(ymlfile)
+                    rtn_dict = module.safe_load(ymlfile)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
             if not isinstance(rtn_dict, dict) or not rtn_dict:
@@ -201,13 +199,14 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
         :param path_file: the name and path of the file
         :param default_flow_style: (optional) if to include the default YAML flow style
         """
+        module = HandlerFactory.get_module('yaml')
         encoding = kwargs.pop('encoding', 'utf-8')
         default_flow_style = kwargs.pop('default_flow_style', False)
         with threading.Lock():
             # make sure the dump is clean
             try:
                 with closing(open(path_file, mode='w', encoding=encoding)) as ymlfile:
-                    yaml.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
+                    module.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
             except IOError as e:
                 raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
         # check the file was created
