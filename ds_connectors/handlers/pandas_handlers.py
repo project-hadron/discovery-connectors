@@ -86,16 +86,21 @@ class PandasSourceHandler(AbstractSourceHandler):
         :param path_file: the name and path of the file
         :return: a dictionary
         """
-        module = HandlerFactory.get_module('yaml')
+        module_name = 'yaml'
+        if HandlerFactory.check_module(module_name=module_name):
+            module = HandlerFactory.get_module(module_name=module_name)
+        else:
+            raise ModuleNotFoundError(f"The required module {module_name} has not been installed. "
+                                      f"Please pip install the appropriate package in order to complete this action")
         encoding = kwargs.pop('encoding', 'utf-8')
         with threading.Lock():
             try:
                 with closing(open(path_file, mode='r', encoding=encoding)) as ymlfile:
                     rtn_dict = module.safe_load(ymlfile)
             except IOError as e:
-                raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
+                raise IOError(f"The yaml file {path_file} failed to open with: {e}")
             if not isinstance(rtn_dict, dict) or not rtn_dict:
-                raise TypeError("The yaml file {} could not be loaded as a dict type".format(path_file))
+                raise TypeError(f"The yaml file {path_file} could not be loaded as a dict type")
             return rtn_dict
 
     @staticmethod
@@ -199,7 +204,12 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
         :param path_file: the name and path of the file
         :param default_flow_style: (optional) if to include the default YAML flow style
         """
-        module = HandlerFactory.get_module('yaml')
+        module_name = 'yaml'
+        if HandlerFactory.check_module(module_name=module_name):
+            module = HandlerFactory.get_module(module_name=module_name)
+        else:
+            raise ModuleNotFoundError(f"The required module {module_name} has not been installed. "
+                                      f"Please pip install the appropriate package in order to complete this action")
         encoding = kwargs.pop('encoding', 'utf-8')
         default_flow_style = kwargs.pop('default_flow_style', False)
         with threading.Lock():
@@ -208,7 +218,7 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
                 with closing(open(path_file, mode='w', encoding=encoding)) as ymlfile:
                     module.safe_dump(data=data, stream=ymlfile, default_flow_style=default_flow_style, **kwargs)
             except IOError as e:
-                raise IOError("The yaml file {} failed to open with: {}".format(path_file, e))
+                raise IOError(f"The yaml file {path_file} failed to open with: {e}")
         # check the file was created
         return
 
