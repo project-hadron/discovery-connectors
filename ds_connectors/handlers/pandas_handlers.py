@@ -2,7 +2,6 @@ import os
 from contextlib import closing
 import threading
 import pandas as pd
-import requests
 import pickle
 import json
 
@@ -65,18 +64,28 @@ class PandasSourceHandler(AbstractSourceHandler):
             raise ValueError("The Pandas Connector Contract has not been set")
         _cc = self.connector_contract
         if _cc.schema.startswith('http'):
-            return requests.get(_cc.address).status_code == 200
+            module_name = 'requests'
+            if HandlerFactory.check_module(module_name=module_name):
+                module = HandlerFactory.get_module(module_name=module_name)
+                return module.get(_cc.address).status_code == 200
+            raise ModuleNotFoundError(f"The required module {module_name} has not been installed. "
+                                      f"Please pip install the appropriate package in order to complete this action")
         if os.path.exists(_cc.address):
             return True
         return False
 
     def get_modified(self) -> [int, float, str]:
         """ returns the modified state of the connector resource"""
-        if not isinstance(self.connector_contract, ConnectorContract):
-            raise ValueError("The Pandas Connector Contract has not been set")
         _cc = self.connector_contract
         if _cc.schema.startswith('http'):
-            return requests.head(_cc.address).headers.get('last-modified', 0)
+            if not isinstance(self.connector_contract, ConnectorContract):
+                raise ValueError("The Pandas Connector Contract has not been set")
+            module_name = 'requests'
+            if HandlerFactory.check_module(module_name=module_name):
+                module = HandlerFactory.get_module(module_name=module_name)
+                return module.head(_cc.address).headers.get('last-modified', 0)
+            raise ModuleNotFoundError(f"The required module {module_name} has not been installed. "
+                                      f"Please pip install the appropriate package in order to complete this action")
         return os.path.getmtime(_cc.address) if os.path.exists(_cc.address) else 0
 
     @staticmethod
