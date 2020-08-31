@@ -187,6 +187,10 @@ class PandasPersistHandler(PandasSourceHandler, AbstractPersistHandler):
             return True
         # json
         if file_type.lower() in ['json']:
+            if isinstance(canonical, pd.DataFrame):
+                with threading.Lock():
+                    canonical.to_json(_address, **write_params)
+                return True
             self._json_dump(data=canonical, path_file=_address, **write_params)
             return True
         # pickle
