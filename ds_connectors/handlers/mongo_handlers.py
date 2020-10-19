@@ -17,6 +17,8 @@ class MongoSourceHandler(AbstractSourceHandler):
         database = self.connector_contract.kwargs.get("database")
         self._mongo_database = self.mongo.MongoClient(self.connector_contract.uri)[database]
         self._mongo_collection = self._mongo_database[self.connector_contract.kwargs.get("collection")]
+        self._file_state = 0
+        self._changed_flag = True
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -54,13 +56,22 @@ class MongoSourceHandler(AbstractSourceHandler):
         _cc = self.connector_contract
         return _cc.kwargs.get("collection") in self._mongo_database.list_collection_names()
 
-    def get_modified(self) -> [int, float, str]:
+    def has_changed(self) -> bool:
         """ returns the amount of documents in the collection
             ... if the counts change ... then the collection was probably modified ...
             ... this assumes that records are never edited/updated ... nor deleted ...
         """
         _cc = self.connector_contract
-        return self._mongo_collection.count_documents(_cc.kwargs.get("find", {}))
+        state = self._mongo_collection.count_documents(_cc.kwargs.get("find", {}))
+        if state != self._file_state:
+            self._changed_flag = True
+            self._file_state = state
+        return self._changed_flag
+
+    def reset_changed(self, changed: bool = False):
+        """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
+        changed = changed if isinstance(changed, bool) else False
+        self._changed_flag = changed
 
 
 class MongoPersistHandler(MongoSourceHandler, AbstractPersistHandler):

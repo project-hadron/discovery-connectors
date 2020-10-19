@@ -10,7 +10,7 @@ from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorCo
 __author__ = 'Darryl Oatridge'
 
 
-class AwsS3SourceHandler(AbstractSourceHandler):
+class S3SourceHandler(AbstractSourceHandler):
     """ An Amazon AWS S3 source handler.
 
         URI Format:
@@ -35,6 +35,8 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         region_name = cc_params.pop('region_name', 'us-east-2')
         profile_name = cc_params.pop('profile_name', 'default')
         self._session = self.boto3.Session(region_name=region_name, profile_name=profile_name)
+        self._file_state = 0
+        self._changed_flag = True
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -64,7 +66,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
                 return True
         return False
 
-    def get_modified(self) -> [int, float, str]:
+    def has_changed(self) -> bool:
         """ returns if the file has been modified
 
             - s3_get_params: (optional) a dictionary of additional s3 client parameters directly passed to 'get_object'
@@ -88,7 +90,16 @@ class AwsS3SourceHandler(AbstractSourceHandler):
             raise ConnectionError("Failed to retrieve the object from region '{}', bucket '{}' "
                                   "Key '{}' with error code '{}'".format(self._session.region_name, _cc.netloc,
                                                                          _cc.path[1:], code))
-        return s3_object.get('LastModified', 0)
+        state = s3_object.get('LastModified', 0)
+        if state != self._file_state:
+            self._changed_flag = True
+            self._file_state = state
+        return self._changed_flag
+
+    def reset_changed(self, changed: bool = False):
+        """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
+        changed = changed if isinstance(changed, bool) else False
+        self._changed_flag = changed
 
     def load_canonical(self, **kwargs) -> [pd.DataFrame, dict]:
         """Loads the canonical dataset, returning a Pandas DataFrame. This method utilises the pandas
@@ -150,7 +161,7 @@ class AwsS3SourceHandler(AbstractSourceHandler):
         raise LookupError('The source format {} is not currently supported'.format(file_type))
 
 
-class AwsS3PersistHandler(AwsS3SourceHandler, AbstractPersistHandler):
+class S3PersistHandler(S3SourceHandler, AbstractPersistHandler):
     """ An Amazon AWS S3 source handler.
 
         URI Format:

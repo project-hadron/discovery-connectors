@@ -13,14 +13,12 @@ class RedisSourceHandler(AbstractSourceHandler):
         # required module import
         self.redis = HandlerFactory.get_module('redis')
         super().__init__(connector_contract)
-        self._modified = 0
+        self._file_state = 0
+        self._changed_flag = True
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
         return ['redis']
-
-    def exists(self) -> bool:
-        pass
 
     def load_canonical(self, **kwargs) -> dict:
         """ returns the canonical dataset based on the source contract
@@ -69,8 +67,22 @@ class RedisSourceHandler(AbstractSourceHandler):
                 conn.close()
                 print('Database connection closed.')
 
-    def get_modified(self) -> [int, float, str]:
-        return self._modified
+    def exists(self) -> bool:
+        return True
+
+    def has_changed(self) -> bool:
+        """ returns if the file has been modified"""
+        # TODO: Add in change logic here
+        state = None
+        if state != self._file_state:
+            self._changed_flag = True
+            self._file_state = state
+        return self._changed_flag
+
+    def reset_changed(self, changed: bool = False):
+        """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
+        changed = changed if isinstance(changed, bool) else False
+        self._changed_flag = changed
 
 
 class RedisPersistHandler(RedisSourceHandler, AbstractPersistHandler):

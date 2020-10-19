@@ -28,6 +28,8 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         self.token = self._load_token()
         self.api_endpoint = self._load_api_endpoint()
         self.cortex_mc_client = ManagedContentClient(self.api_endpoint, "2", self.token)
+        self._file_state = 0
+        self._changed_flag = True
 
     def mc_key(self, connector_contract: Optional[ConnectorContract]=None):
         _cc = connector_contract if connector_contract is not None else self.connector_contract

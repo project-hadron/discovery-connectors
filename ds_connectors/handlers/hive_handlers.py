@@ -11,7 +11,8 @@ class HiveSourceHandler(AbstractSourceHandler):
         """ initialise the Handler passing the source_contract dictionary """
         self.pyhive = HandlerFactory.get_module('pyhive.hive')
         super().__init__(connector_contract)
-        self._modified = 0
+        self._file_state = 0
+        self._changed_flag = True
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
@@ -57,9 +58,19 @@ class HiveSourceHandler(AbstractSourceHandler):
         cursor.close()
         return rtn_dict
 
-    def get_modified(self) -> [int, float, str]:
-        return self._modified
-
     def exists(self) -> bool:
-        raise NotImplementedError("This fuction is not yet implemented for Hive")
+        return True
 
+    def has_changed(self) -> bool:
+        """ returns if the file has been modified"""
+        # TODO: Add in change logic here
+        state = None
+        if state != self._file_state:
+            self._changed_flag = True
+            self._file_state = state
+        return self._changed_flag
+
+    def reset_changed(self, changed: bool = False):
+        """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
+        changed = changed if isinstance(changed, bool) else False
+        self._changed_flag = changed
