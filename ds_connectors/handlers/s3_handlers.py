@@ -3,6 +3,7 @@ from io import StringIO, BytesIO
 import pandas as pd
 import pickle
 import json
+import os
 
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, \
     HandlerFactory
@@ -33,8 +34,13 @@ class S3SourceHandler(AbstractSourceHandler):
         cc_params = connector_contract.kwargs
         cc_params.update(connector_contract.query)  # Update kwargs with those in the uri query
         region_name = cc_params.pop('region_name', 'us-east-2')
-        profile_name = cc_params.pop('profile_name', 'default')
-        self._session = self.boto3.Session(region_name=region_name, profile_name=profile_name)
+        aws_access_key_id = cc_params.pop('aws_access_key_id', os.environ.get('AWS_ACCESS_KEY_ID'))
+        aws_secret_access_key = cc_params.pop('aws_secret_access_key', os.environ.get('AWS_SECRET_ACCESS_KEY'))
+        aws_session_token = cc_params.pop('aws_session_token', os.environ.get('AWS_SESSION_TOKEN'))
+        profile_name = cc_params.pop('profile_name', None)
+        self._session = self.boto3.Session(region_name=region_name, aws_access_key_id=aws_access_key_id,
+                                           aws_secret_access_key=aws_secret_access_key, profile_name=profile_name,
+                                           aws_session_token=aws_session_token)
         self._file_state = 0
         self._changed_flag = True
 

@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+import os
 from pprint import pprint
 
 from ds_connectors.handlers.s3_handlers import S3SourceHandler, S3PersistHandler
@@ -15,7 +16,7 @@ class S3HandlerTest(unittest.TestCase):
         pass
 
     def test_aws_connector_init(self):
-        handler = S3PersistHandler(connector_contract=ConnectorContract(uri='s3://aistac-discovery-persist/persist/tester.json', module_name='', handler=''))
+        handler = S3PersistHandler(connector_contract=ConnectorContract(uri='s3://project-hadron-cs-repo/factory/healthcare/members', module_name='', handler=''))
         data = {'a': [1,2,3,4,5]}
         handler.persist_canonical(data)
         result = handler.load_canonical()
