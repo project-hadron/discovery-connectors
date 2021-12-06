@@ -1,13 +1,14 @@
 from gzip import GzipFile
 import io
+import os
 import yaml
 import threading
 from contextlib import closing
 import json
-from typing import Optional
+from typing import Optional, List, Union
 import pandas as pd
-from .bundles.managed_content.content import ManagedContentClient
-from .bundles.managed_content.cortex_helpers import load_token, load_api_endpoint
+from cortex.content import ManagedContentClient
+from .cortex_helpers import load_token, load_api_endpoint
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
 
 try:
@@ -27,7 +28,8 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         super().__init__(connector_contract)
         self.token = self._load_token()
         self.api_endpoint = self._load_api_endpoint()
-        self.cortex_mc_client = ManagedContentClient(self.api_endpoint, "2", self.token)
+        self.project = self._load_project_name()
+        self.cortex_mc_client = ManagedContentClient(url=self.api_endpoint, token=self.token)
         self._file_state = 0
         self._changed_flag = True
 
@@ -41,13 +43,16 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
 
     def _load_api_endpoint(self):
         return load_api_endpoint(endpoint=self.connector_contract.kwargs.get("api_endpoint"))
+    
+    def _load_project_name(self):
+        return self.connector_contract.kwargs.get("project")
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['pickle', "csv"]  # , "json" , "tsv"
+        return ['pickle', "csv", "parquet"]  # , "json" , "tsv"
 
     def _download_key_from_mc(self, key):
-        return self.cortex_mc_client.download(key, retries=2)
+        return self.cortex_mc_client.download(key, retries=2, project=self.project)
 
     def _load_dict_from_json_in_mc(self, mc_key: str, load_as_df=None, **json_options) -> pd.DataFrame:
         if not self.exists():
@@ -81,12 +86,18 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
             with closing(io.BytesIO(self._download_key_from_mc(mc_key).read())) as f:
                 return pickle.load(f, fix_imports=fix_imports, encoding=encoding, errors=errors)
 
-    def _load_gz_from_mc(self, mc_key: str) -> [GzipFile, None]:
+    def _load_gz_from_mc(self, mc_key: str) -> Union[GzipFile, None]:
         if not self.exists():
             return None
         return GzipFile(None, 'rb', fileobj=self._download_key_from_mc(mc_key))
+    
+    def _load_df_from_parquet_in_mc(self, mc_key: str, **pandas_options) -> pd.DataFrame:
+        if not self.exists():
+            return pd.DataFrame()
+        content = self._download_key_from_mc(mc_key).read()
+        return pd.read_parquet(io.BytesIO(content), **pandas_options)
 
-    def load_canonical(self) -> [pd.DataFrame, dict, GzipFile]:
+    def load_canonical(self) -> Union[pd.DataFrame, dict, GzipFile]:
         """ returns the canonical dataset based on the connector contract. This method utilises the pandas
         'pd.read_' methods and directly passes the kwargs to these methods.
         Extra Parameters in the ConnectorContract kwargs:
@@ -99,6 +110,7 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
         load_params.pop('token', None)
         load_params.pop('api_endpoint', None)
+        load_params.pop('project', None)
         _, _, _ext = _cc.address.rpartition('.')
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
         with threading.Lock():
@@ -114,6 +126,9 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
                 rtn_data = self._load_dict_from_yaml_in_mc(self.mc_key())
             elif file_type.lower() in ["gz"]:
                 rtn_data = self._load_gz_from_mc(self.mc_key())
+            elif file_type.lower() in ['parquet']:
+                rtn_data = self._load_df_from_parquet_in_mc(mc_key=self.mc_key(),
+                **load_params)
             else:
                 raise LookupError('The source format {} is not currently supported'.format(file_type))
         return rtn_data
@@ -122,9 +137,9 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         """ returns True if the file in mc exists """
         _cc = self.connector_contract
         mc_key = self.mc_key()
-        return self.cortex_mc_client.exists(mc_key)
+        return self.cortex_mc_client.exists(key=mc_key, project=self.project)
 
-    def get_modified(self) -> [int, float, str]:
+    def get_modified(self) -> Union[int, float, str]:
         """ returns the amount of documents in the collection
             ... if the counts change ... then the collection was probably modified ...
             ... this assumes that records are never edited/updated ... nor deleted ...
@@ -136,6 +151,20 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         resp = self.cortex_mc_client.serviceconnector.request('GET', uri)
         response = resp.json()
         return (response or {}).get("LastModified", 0)
+    
+    def reset_changed(self, changed: bool = False):
+        """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
+        changed = changed if isinstance(changed, bool) else False
+        self._changed_flag = changed
+    
+    def has_changed(self) -> bool:
+        """ returns if the file has been modified
+
+            - s3_get_params: (optional) a dictionary of additional s3 client parameters directly passed to 'get_object'
+        """
+        
+        raise NotImplementedError("has_changed for ManagedContentPersistHandler not yet implemented.")
+    
 
 
 class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistHandler):
@@ -151,7 +180,16 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
             self.cortex_mc_client.upload_streaming(mc_key, pickle_byte_stream, "application/python-pickle")
 
     def _persist_df_as_csv(self, canonical: pd.DataFrame, mc_key: str, **kwargs):
-        return self.cortex_mc_client.upload_streaming(mc_key, canonical.to_csv(**kwargs), "text/csv", retries=2)
+        file_name = os.path.basename(mc_key)
+        canonical.to_csv(file_name)
+        f_obj = open(file_name, mode="rb")
+        return self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
+    
+    def _persist_df_as_parquet(self, canonical: pd.DataFrame, mc_key: str, **kwargs):
+        file_name = os.path.basename(mc_key)
+        canonical.to_parquet(file_name)
+        f_obj = open(file_name, mode="rb")
+        return self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
 
     def _persist_dict_as_json(self, canonical: dict, mc_key: str):
         return self.cortex_mc_client.upload_streaming(mc_key, json.dumps(canonical), "application/json", retries=2)
@@ -169,7 +207,7 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         _uri = self.connector_contract.uri
         return self.backup_canonical(uri=_uri, canonical=canonical)
 
-    def backup_canonical(self, canonical: [dict, pd.DataFrame], uri: str, ignore_kwargs: bool = False) -> bool:
+    def backup_canonical(self, canonical: Union[dict, pd.DataFrame], uri: str, ignore_kwargs: bool = False) -> bool:
         """ creates a backup of the canonical to an alternative URI  """
         if not isinstance(self.connector_contract, ConnectorContract):
             return False
@@ -179,6 +217,7 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
         load_params.pop('token', None)
         load_params.pop('api_endpoint', None)
+        load_params.pop('project', None)
         mc_key = self.mc_key(_uri_cc)
         _, _, _ext = _uri_cc.address.rpartition('.')
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
@@ -193,6 +232,8 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
                 self._persist_dict_as_json(canonical=canonical, mc_key=mc_key)
             elif file_type.lower() in ['yaml']:
                 self._persist_dict_as_yaml(canonical=canonical, mc_key=mc_key)
+            elif file_type.lower() in ['parquet']:
+                self._persist_df_as_parquet(canonical=canonical, mc_key=mc_key)
             else:
                 raise LookupError('The source format {} is not currently supported'.format(file_type))
 
