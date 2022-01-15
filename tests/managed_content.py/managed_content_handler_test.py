@@ -37,6 +37,13 @@ class ManagedContentHandlerTest(unittest.TestCase):
         result = handler.load_canonical()
         self.assertTrue(isinstance(result, pd.DataFrame))
 
+        cc = ConnectorContract(uri='test/test.pickle', module_name='', handler='', api_endpoint='', token='', project='')
+        handler = ManagedContentPersistHandler(cc)
+        df = pd.DataFrame(data = {'a': [1,2,3,4,5]})
+        handler.persist_canonical(df)
+        result = handler.load_canonical()
+        self.assertTrue(isinstance(result, pd.DataFrame))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -177,7 +177,7 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         with threading.Lock():
             # https://stackoverflow.com/questions/13223855/what-is-the-http-content-type-to-use-for-a-blob-of-bytes
             pickle_byte_stream = pickle.dumps(canonical, protocol=protocol, fix_imports=fix_imports)
-            self.cortex_mc_client.upload_streaming(mc_key, pickle_byte_stream, "application/python-pickle")
+            self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=pickle_byte_stream, content_type="application/python-pickle", retries=2)
 
     def _persist_df_as_csv(self, canonical: pd.DataFrame, mc_key: str, **kwargs):
         file_name = os.path.basename(mc_key)
