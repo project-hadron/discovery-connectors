@@ -39,17 +39,17 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         return key[1:] if key.startswith("/") else key
 
     def _load_token(self):
-        return load_token(token=self.connector_contract.kwargs.get("token"))
+        return load_token(token=self.connector_contract.kwargs.get("token", os.environ["TOKEN"]))
 
     def _load_api_endpoint(self):
-        return load_api_endpoint(endpoint=self.connector_contract.kwargs.get("api_endpoint"))
+        return load_api_endpoint(endpoint=self.connector_contract.kwargs.get("api_endpoint", os.environ["API_ENDPOINT"]))
     
     def _load_project_name(self):
-        return self.connector_contract.kwargs.get("project")
+        return self.connector_contract.kwargs.get("project", os.environ["PROJECT"])
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['pickle', "csv", "parquet"]  # , "json" , "tsv"
+        return ['pickle', "csv", "parquet", "json"]  # , "json" , "tsv"
 
     def _download_key_from_mc(self, key):
         return self.cortex_mc_client.download(key, retries=2, project=self.project)
@@ -192,7 +192,9 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         return self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
 
     def _persist_dict_as_json(self, canonical: dict, mc_key: str):
-        return self.cortex_mc_client.upload_streaming(mc_key, json.dumps(canonical), "application/json", retries=2)
+        if isinstance(canonical, pd.DataFrame):
+            canonical = canonical.to_json()
+        return self.cortex_mc_client.upload_streaming(mc_key, project=self.project, stream=json.dumps(canonical), content_type="application/json", retries=2)
 
     def _persist_dict_as_yaml(self, canonical: dict, mc_key: str):
         return self.cortex_mc_client.upload_streaming(mc_key, yaml.dump(canonical), "application/yaml", retries=2)
