@@ -6,6 +6,8 @@
 setuptools
 aistac-foundation
 pandas
+#corte
+cortex-python==6.1.0
 
 # SQl and HTML libs
 #sqlalchemy

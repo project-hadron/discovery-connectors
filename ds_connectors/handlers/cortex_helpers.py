@@ -2,38 +2,25 @@ import os
 import json
 import sys
 
-from .env import CortexEnv
+# from .env import CortexEnv
+from cortex.env import CortexEnv
 
-TOKEN_ENV_VAR_NAME_FOR_DAEMONS = "startup.token"
-API_ENDPOINT_FOR_DAEMONS = "http://cortex-kong.cortex.svc.cluster.local:8000"
+TOKEN_ENV_VAR_NAME = "CORTEX_TOKEN"
+API_ENPOINT_ENV_VAR_NAME = "CORTEX_API_ENDPOINT"
 
 
 # -------------------------------------- Token Loaders --------------------------------------
-def load_token_from_job_env():
-    try:
-        return json.loads(sys.argv[1]).get("token", None)
-    except Exception:
-        return None
+def load_token_from_env():
+    return os.getenv(TOKEN_ENV_VAR_NAME, None)
 
 
-def load_token_from_daemon_env():
-    return os.getenv(TOKEN_ENV_VAR_NAME_FOR_DAEMONS, None)
-
-
-def load_token_from_local_env():
-    return CortexEnv().token
-
-
-def load_token(env_resolution_order=["args","local-cli","local-env","job","daemon"], token=None):
+def load_token(env_resolution_order=["args","env"], token=None):
     """
     Returns the first token it can find based on the resolution order
     """
     token_finders_per_env = {
         "args": (lambda: token),
-        "daemon": load_token_from_daemon_env,
-        "job": load_token_from_job_env,
-        "local-env": CortexEnv.get_cortex_token,
-        "local-cli": (lambda: CortexEnv.get_cortex_profile().get("token", None))
+        "env": load_token_from_env
     }
     for env in env_resolution_order:
         if not env in token_finders_per_env:
@@ -48,28 +35,18 @@ def load_token(env_resolution_order=["args","local-cli","local-env","job","daemo
 # ------------------------------------ Endpoint Loaders ------------------------------------
 
 
-def load_endpoint_from_daemon_env():
-    return API_ENDPOINT_FOR_DAEMONS
+def load_endpoint_from_env():
+    return API_ENPOINT_ENV_VAR_NAME
 
 
-def load_endpoint_from_job_env():
-    try:
-        return json.loads(sys.argv[1]).get("apiEndpoint", None)
-    except Exception:
-        return None
-
-
-def load_api_endpoint(env_resolution_order=["args","local-cli","local-env","job","daemon"], endpoint=None):
+def load_api_endpoint(env_resolution_order=["args","env"], endpoint=None):
     """
     Returns the first api endpoint it can extract from the enviroment.
     The order of in which the environments are searched is dictated by the env_resolution_order
     """
     endpoint_finders_per_env = {
         "args": (lambda: endpoint),
-        "daemon": load_endpoint_from_daemon_env,
-        "job": load_endpoint_from_job_env,
-        "local-env": (lambda: os.getenv('CORTEX_URI', None)),
-        "local-cli": (lambda: CortexEnv.get_cortex_profile().get("url", None))
+        "env": load_endpoint_from_env
     }
     for env in env_resolution_order:
         if not env in endpoint_finders_per_env:
