@@ -17,10 +17,10 @@ except ImportError:
     import pickle
 
 
-__author__ = 'Omar Eid'
+__author__ = 'Bikash Pandey'
 
 
-class ManagedContentSourceHandler(AbstractSourceHandler):
+class MCSourceHandler(AbstractSourceHandler):
     """ A Managed Content Source handler"""
 
     def __init__(self, connector_contract: ConnectorContract):
@@ -30,13 +30,15 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         self.api_endpoint = self._load_api_endpoint()
         self.project = self._load_project_name()
         self.cortex_mc_client = ManagedContentClient(url=self.api_endpoint, token=self.token)
-        self._file_state = 0
+        self._etag = 0
         self._changed_flag = True
 
     def mc_key(self, connector_contract: Optional[ConnectorContract]=None):
         _cc = connector_contract if connector_contract is not None else self.connector_contract
-        key = _cc.path
-        return key[1:] if key.startswith("/") else key
+        schema, bucket, path = _cc.parse_address_elements(_cc.uri)
+        if not path:
+            return bucket
+        return os.path.join(bucket, path)
 
     def _load_token(self):
         return load_token(token=self.connector_contract.kwargs.get("token", os.environ["TOKEN"]))
@@ -106,6 +108,8 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         if not isinstance(self.connector_contract, ConnectorContract):
             raise ValueError("The Managed Content Connector Contract has not been set")
         _cc = self.connector_contract
+        if not isinstance(_cc, ConnectorContract):
+            raise ValueError("The Python Source Connector Contract has not been set correctly")
         load_params = _cc.kwargs
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
         load_params.pop('token', None)
@@ -113,6 +117,13 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         load_params.pop('project', None)
         _, _, _ext = _cc.address.rpartition('.')
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
+        if file_type.lower() not in self.supported_types():
+            raise ValueError("The file type {} is not recognised. "
+                             "Set file_type parameter to a recognised source type".format(file_type))
+
+        # session
+        if _cc.schema not in ['mc']:
+            raise ValueError("The Connector Contract Schema has not been set correctly.")
         with threading.Lock():
             if file_type.lower() in ['csv']:
                 rtn_data = self._load_df_from_csv_in_mc(mc_key=self.mc_key(), **load_params)
@@ -131,6 +142,7 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
                 **load_params)
             else:
                 raise LookupError('The source format {} is not currently supported'.format(file_type))
+        self.reset_changed()
         return rtn_data
 
     def exists(self) -> bool:
@@ -139,35 +151,36 @@ class ManagedContentSourceHandler(AbstractSourceHandler):
         mc_key = self.mc_key()
         return self.cortex_mc_client.exists(key=mc_key, project=self.project)
 
-    def get_modified(self) -> Union[int, float, str]:
-        """ returns the amount of documents in the collection
-            ... if the counts change ... then the collection was probably modified ...
-            ... this assumes that records are never edited/updated ... nor deleted ...
-        """
-        # Cortex Does Not Currently send back any meta data regarding the file version when checking if it exists ...
-        # https://bitbucket.org/cognitivescale/cortex-connections-service/src/d1d2fdae3fc9db398d7873cac58c2dc7db6fb5ff/lib/controllers/content.js#lines-287
-        mc_key = self.mc_key()
-        uri = f"content/details/{mc_key}"
-        resp = self.cortex_mc_client.serviceconnector.request('GET', uri)
-        response = resp.json()
-        return (response or {}).get("LastModified", 0)
-    
     def reset_changed(self, changed: bool = False):
         """ manual reset to say the file has been seen. This is automatically called if the file is loaded"""
         changed = changed if isinstance(changed, bool) else False
         self._changed_flag = changed
     
     def has_changed(self) -> bool:
-        """ returns if the file has been modified
-
-            - s3_get_params: (optional) a dictionary of additional s3 client parameters directly passed to 'get_object'
+        """ 
+            returns if the file has been modified
+            uses etag
         """
-        
-        raise NotImplementedError("has_changed for ManagedContentPersistHandler not yet implemented.")
-    
+        if not isinstance(self.connector_contract, ConnectorContract):
+            raise ValueError("The Managed Content Connector Contract has not been set")
+        _cc = self.connector_contract
+        if not isinstance(_cc, ConnectorContract):
+            raise ValueError("The Python Source Connector Contract has not been set correctly")
+        load_params = _cc.kwargs
+        load_params.update(_cc.query)  # Update kwargs with those in the uri query
+        load_params.pop('token', None)
+        load_params.pop('api_endpoint', None)
+        load_params.pop('project', None)
+        res = self._download_key_from_mc(self.mc_key())  
+        _etag = res.headers['etag']
+        if _etag != self._etag:
+            self._changed_flag = True
+            self._etag = _etag
+        else:
+            self._changed_flag = False
+        return self._changed_flag
 
-
-class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistHandler):
+class MCPersistHandler(MCSourceHandler, AbstractPersistHandler):
     # A Managed Content persist handler
 
     def _persist_df_as_pickle(self, canonical: pd.DataFrame, mc_key: str, **kwargs) -> None:
@@ -182,22 +195,26 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
     def _persist_df_as_csv(self, canonical: pd.DataFrame, mc_key: str, **kwargs):
         file_name = os.path.basename(mc_key)
         canonical.to_csv(file_name)
-        f_obj = open(file_name, mode="rb")
-        return self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
+        with open(file_name, mode="rb") as f_obj:
+            res = self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
+        return res
     
     def _persist_df_as_parquet(self, canonical: pd.DataFrame, mc_key: str, **kwargs):
         file_name = os.path.basename(mc_key)
         canonical.to_parquet(file_name)
-        f_obj = open(file_name, mode="rb")
-        return self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
+        with open(file_name, mode="rb") as f_obj:
+            res = self.cortex_mc_client.upload_streaming(key=mc_key, project=self.project, stream=f_obj, content_type="application/octet-stream", retries=2)
+        return res
 
     def _persist_dict_as_json(self, canonical: dict, mc_key: str):
         if isinstance(canonical, pd.DataFrame):
             canonical = canonical.to_json()
-        return self.cortex_mc_client.upload_streaming(mc_key, project=self.project, stream=json.dumps(canonical), content_type="application/json", retries=2)
+        res = self.cortex_mc_client.upload_streaming(mc_key, project=self.project, stream=json.dumps(canonical), content_type="application/json", retries=2)
+        return res
 
     def _persist_dict_as_yaml(self, canonical: dict, mc_key: str):
-        return self.cortex_mc_client.upload_streaming(mc_key, yaml.dump(canonical), "application/yaml", retries=2)
+        res = self.cortex_mc_client.upload_streaming(mc_key, yaml.dump(canonical), "application/yaml", retries=2)
+        return res
 
     def persist_canonical(self, canonical: pd.DataFrame, **kwargs) -> bool:
         """ persists the canonical dataset
@@ -214,14 +231,16 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
         if not isinstance(self.connector_contract, ConnectorContract):
             return False
         _cc = self.connector_contract
-        _uri_cc = ConnectorContract(uri, module_name=_cc.module_name, handler=_cc.handler)
+        if not isinstance(_cc, ConnectorContract):
+            raise ValueError("The Python Source Connector Contract has not been set correctly")
+        schema, bucket, path = _cc.parse_address_elements(uri=uri)
+        _, _, _ext = path.rpartition('.')
         load_params = _cc.kwargs
         load_params.update(_cc.query)  # Update kwargs with those in the uri query
         load_params.pop('token', None)
         load_params.pop('api_endpoint', None)
         load_params.pop('project', None)
-        mc_key = self.mc_key(_uri_cc)
-        _, _, _ext = _uri_cc.address.rpartition('.')
+        mc_key = self.mc_key()
         file_type = load_params.get('file_type', _ext if len(_ext) > 0 else 'csv')
         with threading.Lock():
             if file_type.lower() in ['csv']:
@@ -243,6 +262,16 @@ class ManagedContentPersistHandler(ManagedContentSourceHandler, AbstractPersistH
 
     def remove_canonical(self) -> bool:
         if not isinstance(self.connector_contract, ConnectorContract):
-            return False
+            raise ValueError("The Managed Content Connector Contract has not been set")
         _cc = self.connector_contract
-        raise NotImplementedError("remove_canonical for ManagedContentPersistHandler not yet implemented.")
+        if not isinstance(_cc, ConnectorContract):
+            raise ValueError("The Python Source Connector Contract has not been set correctly")
+        load_params = _cc.kwargs
+        load_params.update(_cc.query)  # Update kwargs with those in the uri query
+        load_params.pop('token', None)
+        load_params.pop('api_endpoint', None)
+        load_params.pop('project', None)
+        self.cortex_mc_client.delete(self.mc_key(), project=self.project)
+        if not self.exists():
+            return True
+        return False
