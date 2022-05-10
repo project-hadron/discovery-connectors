@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from pprint import pprint
 
-from ds_connectors.handlers.mc_handlers import MCSourceHandler, MCPersistHandler
+from ds_connectors.handlers.mc_handlers import McSourceHandler, McPersistHandler
 from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
 
 
@@ -28,7 +28,7 @@ class ManagedContentHandlerTest(unittest.TestCase):
             - project: cortex project
         """
         cc = ConnectorContract(uri='mc://test.csv', module_name='', handler='')
-        handler = MCPersistHandler(cc)
+        handler = McPersistHandler(cc)
         df = pd.DataFrame(data = {'a': [1,2,3,4,5]})
         handler.persist_canonical(df)
         result = handler.load_canonical()
@@ -43,7 +43,7 @@ class ManagedContentHandlerTest(unittest.TestCase):
         self.assertTrue(handler.remove_canonical())
 
         cc = ConnectorContract(uri='mc://test/test.parquet', module_name='', handler='')
-        handler = MCPersistHandler(cc)
+        handler = McPersistHandler(cc)
         df = pd.DataFrame(data = {'a': [1,2,3,4,5,6]})
         handler.persist_canonical(df)
         result = handler.load_canonical()
@@ -51,7 +51,7 @@ class ManagedContentHandlerTest(unittest.TestCase):
         self.assertTrue(handler.remove_canonical())
 
         cc = ConnectorContract(uri='mc://test/test.pickle', module_name='', handler='')
-        handler = MCPersistHandler(cc)
+        handler = McPersistHandler(cc)
         df = pd.DataFrame(data = {'a': [1,2,3,4,5,6]})
         handler.persist_canonical(df)
         result = handler.load_canonical()

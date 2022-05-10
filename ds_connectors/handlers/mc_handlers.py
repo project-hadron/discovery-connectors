@@ -20,7 +20,7 @@ except ImportError:
 __author__ = 'Bikash Pandey'
 
 
-class MCSourceHandler(AbstractSourceHandler):
+class McSourceHandler(AbstractSourceHandler):
     """ A Managed Content Source handler"""
 
     def __init__(self, connector_contract: ConnectorContract):
@@ -180,7 +180,7 @@ class MCSourceHandler(AbstractSourceHandler):
             self._changed_flag = False
         return self._changed_flag
 
-class MCPersistHandler(MCSourceHandler, AbstractPersistHandler):
+class McPersistHandler(McSourceHandler, AbstractPersistHandler):
     # A Managed Content persist handler
 
     def _persist_df_as_pickle(self, canonical: pd.DataFrame, mc_key: str, **kwargs) -> None:
