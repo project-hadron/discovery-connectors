@@ -38,7 +38,7 @@ class McSourceHandler(AbstractSourceHandler):
         schema, bucket, path = _cc.parse_address_elements(_cc.uri)
         if not path:
             return bucket
-        return os.path.join(bucket, path)
+        return os.path.join(bucket, path.strip('/'))
 
     def _load_token(self):
         return load_token(token=self.connector_contract.kwargs.get("token", os.environ["TOKEN"]))
