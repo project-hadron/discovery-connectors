@@ -1,9 +1,4 @@
 import os
-import json
-import sys
-
-# from .env import CortexEnv
-from cortex.env import CortexEnv
 
 TOKEN_ENV_VAR_NAME = "CORTEX_TOKEN"
 API_ENPOINT_ENV_VAR_NAME = "CORTEX_API_ENDPOINT"
