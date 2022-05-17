@@ -7,9 +7,8 @@ from contextlib import closing
 import json
 from typing import Optional, List, Union
 import pandas as pd
-from cortex.content import ManagedContentClient
 from .cortex_helpers import load_token, load_api_endpoint
-from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler
+from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, AbstractPersistHandler, HandlerFactory
 
 try:
     import cPickel as pickle
@@ -26,10 +25,11 @@ class McSourceHandler(AbstractSourceHandler):
     def __init__(self, connector_contract: ConnectorContract):
         """ Initialise the handler passing the source_contract dictionary """
         super().__init__(connector_contract)
+        self.cortex_content = HandlerFactory.get_module('cortex.content')
         self.token = self._load_token()
         self.api_endpoint = self._load_api_endpoint()
         self.project = self._load_project_name()
-        self.cortex_mc_client = ManagedContentClient(url=self.api_endpoint, token=self.token)
+        self.cortex_mc_client = self.cortex_content.ManagedContentClient(url=self.api_endpoint, token=self.token)
         self._etag = 0
         self._changed_flag = True
 
