@@ -6,6 +6,7 @@
 setuptools
 aistac-foundation
 pandas
+pymysql
 
 # SQl and HTML libs
 #sqlalchemy

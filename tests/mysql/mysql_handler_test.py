@@ -24,6 +24,7 @@ class MySQLHandlerTest(unittest.TestCase):
     def test_mysql_connector_init(self):
         handler = MySQLSourceHandler(connector_contract=self.connector_contract)
         result = handler.load_canonical()
+        print(result)
         self.assertTrue(isinstance(result, pd.DataFrame))
 
 

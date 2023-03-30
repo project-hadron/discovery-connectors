@@ -1,5 +1,7 @@
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, HandlerFactory
 import pandas as pd
+import re
+import pymysql.cursors
 
 __author__ = 'Johan Gielstra'
 
@@ -51,7 +53,10 @@ class MySQLSourceHandler(AbstractSourceHandler):
                                          user=self._user,
                                          password=self._password,
                                          database=self._database,
-                                         port=int(self._port))
+                                         port=int(self._port), cursorclass=pymysql.cursors.DictCursor)
+            # TODO nested modules(pymysql.cursors) are not being loaded using HandlerFactory.get_module('pymysql'),
+            #  had to import manually in imports
+
             if "query" in kwargs:
                 self._query = kwargs.get("query")
 
@@ -74,10 +79,11 @@ class MySQLSourceHandler(AbstractSourceHandler):
         """
         connector_type = self.connector_contract.schema
         path = self.connector_contract.path
+        if not self.__use_mysql_uri_regex(path):
+            raise ValueError("Uri path must match following pattern, jdbc:mysql://user:password@host:port/database")
 
-        url_splits = path.split("//")
-        credentials_str = url_splits[1].split("@")[0]
-        rest_of_uri_str = url_splits[1].split("@")[1]
+        rest_of_uri_str = path[path.rindex("@") + 1:]
+        credentials_str = path[0:path.rindex("@"):].split("//")[1]
 
         # gets credentials from uri
         username = credentials_str.split(":")[0]
@@ -95,3 +101,10 @@ class MySQLSourceHandler(AbstractSourceHandler):
         if connector_type.lower() not in self.supported_types():
             raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
         return host, port, database, username, password, query
+
+    def __use_mysql_uri_regex(self, uri):
+        """
+        checks uri matches to mysql patten
+        """
+        pattern = re.compile(r"[A-Za-z]+:.*//[A-Za-z0-9]+:.*@.*:[0-9]+/[A-Za-z0-9]+", re.IGNORECASE)
+        return pattern.match(uri)
