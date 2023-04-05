@@ -1,3 +1,5 @@
+import traceback
+
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, HandlerFactory
 import pandas as pd
 import re
@@ -14,7 +16,7 @@ class MySQLSourceHandler(AbstractSourceHandler):
         # required module import
         self.pymysql = HandlerFactory.get_module('pymysql')
         super().__init__(connector_contract)
-        self._host, self._port, self._database, self._user, self._password, self._query = self.__get_connector_details()
+        self._host, self._port, self._database, self._user, self._password = self.__get_connector_details()
         self._file_state = 0
         self._changed_flag = True
 
@@ -50,37 +52,49 @@ class MySQLSourceHandler(AbstractSourceHandler):
 
         try:
             conn = self.pymysql.connect(host=self._host,
-                                         user=self._user,
-                                         password=self._password,
-                                         database=self._database,
-                                         port=int(self._port), cursorclass=pymysql.cursors.DictCursor)
+                                        user=self._user,
+                                        password=self._password,
+                                        database=self._database,
+                                        port=int(self._port), cursorclass=pymysql.cursors.DictCursor)
             # TODO nested modules(pymysql.cursors) are not being loaded using HandlerFactory.get_module('pymysql'),
             #  had to import manually in imports
 
-            if "query" in kwargs:
-                self._query = kwargs.get("query")
+            # gets query from uri if exists
+            query=""
+            if "query" in self.connector_contract.query:
+                query = self.connector_contract.query['query']
+
+            # check query is passed explicitly other than in uri
+            if self.connector_contract.kwargs.get('query'):
+                query = self.connector_contract.kwargs.get('query')
+
+            if not query:
+                raise ValueError("Query is not specified in either URI nor Connector Contract")
 
             with conn.cursor() as cursor:
-                cursor.execute(self._query)
+                cursor.execute(query)
                 result = cursor.fetchall()
                 df = pd.DataFrame(result)
                 return df
         except (Exception, self.pymysql.Error) as error:
             print(error)
+            # traceback.print_exc()
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                # print('Database connection closed.')
 
     def __get_connector_details(self):
         """
         gets connector details like host, port, username, password, etc from uri
-        sample uri: "jdbc:mysql://root:password@localhost:3306/database"
+        sample uri: "jdbc:mysql://root:password@localhost:3306/database?query=select* from test"
         """
         connector_type = self.connector_contract.schema
         path = self.connector_contract.path
+
         if not self.__use_mysql_uri_regex(path):
-            raise ValueError("Uri path must match following pattern, jdbc:mysql://user:password@host:port/database")
+            raise ValueError("Uri path must match following pattern, "
+                             "jdbc:mysql://user:password@host:port/database?query=select* from test")
 
         rest_of_uri_str = path[path.rindex("@") + 1:]
         credentials_str = path[0:path.rindex("@"):].split("//")[1]
@@ -94,13 +108,9 @@ class MySQLSourceHandler(AbstractSourceHandler):
         port = rest_of_uri_str.split(":")[1].split("/")[0]
         database = rest_of_uri_str.split(":")[1].split("/")[1].split("?")[0]
 
-        params = ""
-        if "?" in rest_of_uri_str:
-            params = rest_of_uri_str.split(":")[1].split("/")[1].split("?")[1]
-        query = self.connector_contract.kwargs.get('query')
         if connector_type.lower() not in self.supported_types():
             raise ValueError("The source type '{}' is not supported. see supported_types()".format(connector_type))
-        return host, port, database, username, password, query
+        return host, port, database, username, password
 
     def __use_mysql_uri_regex(self, uri):
         """
