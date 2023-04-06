@@ -3,7 +3,6 @@ import traceback
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, ConnectorContract, HandlerFactory
 import pandas as pd
 import re
-import pymysql.cursors
 
 __author__ = 'Johan Gielstra'
 
@@ -15,6 +14,7 @@ class MySQLSourceHandler(AbstractSourceHandler):
         """ initialise the Handler passing the source_contract dictionary """
         # required module import
         self.pymysql = HandlerFactory.get_module('pymysql')
+        self.pymysql_cursors = HandlerFactory.get_module('pymysql.cursors')
         super().__init__(connector_contract)
         self._host, self._port, self._database, self._user, self._password = self.__get_connector_details()
         self._file_state = 0
@@ -55,9 +55,7 @@ class MySQLSourceHandler(AbstractSourceHandler):
                                         user=self._user,
                                         password=self._password,
                                         database=self._database,
-                                        port=int(self._port), cursorclass=pymysql.cursors.DictCursor)
-            # TODO nested modules(pymysql.cursors) are not being loaded using HandlerFactory.get_module('pymysql'),
-            #  had to import manually in imports
+                                        port=int(self._port), cursorclass=self.pymysql_cursors.DictCursor)
 
             # gets query from uri if exists
             query=""
