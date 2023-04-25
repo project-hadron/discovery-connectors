@@ -37,7 +37,7 @@ class MongodbSourceHandler(AbstractSourceHandler):
 
     def supported_types(self) -> list:
         """ The source types supported with this module"""
-        return ['mongo']
+        return ['mongodb']
 
     def load_canonical(self, **kwargs) -> pd.DataFrame:
         """ returns the canonical dataset based on the source contract

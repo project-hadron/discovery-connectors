@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import pandas as pd
 from aistac.handlers.abstract_handlers import ConnectorContract
-from ds_discovery import SyntheticBuilder
+from ds_discovery import SyntheticBuilder, Controller
 from aistac.properties.property_manager import PropertyManager
 
 # Pandas setup
@@ -50,6 +50,7 @@ class MysqlHandlerTest(unittest.TestCase):
             shutil.rmtree('working')
         except OSError:
             pass
+
 
     def test_handler_default(self):
         sb = SyntheticBuilder.from_memory()

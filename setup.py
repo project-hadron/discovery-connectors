@@ -63,7 +63,7 @@ setup(
     ],
     extras_require={'postgress': ['psycopg2'],
                     'hive': ['pyhive'],
-                    'mongo': ['pymongo'],
+                    'mongodb': ['pymongo'],
                     's3': ['boto3', 'botocore'],
                     'pandas': ['pandas>0.25'],
                     'yaml': ['pyyaml'],
