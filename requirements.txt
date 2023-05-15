@@ -7,6 +7,7 @@ setuptools
 aistac-foundation
 pandas
 pymysql
+oracledb
 
 # SQl and HTML libs
 #sqlalchemy
