@@ -8,14 +8,16 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.types import Integer, Float
+from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 
 __author__ = 'Darryl and Sekhar'
 
 
 class OracleSourceHandler(AbstractSourceHandler):
     """ This handler class uses both SQLAlchemy and oracledb. Together, SQLAlchemy and oracledb provide a powerful
-    toolset for working with databases and faster connectivity. SQLAlchemy allows developers to interact with MySQL
-    using Python code, while MySQL provides the database functionality needed to store and retrieve data efficiently.
+    toolset for working with databases and faster connectivity. SQLAlchemy allows developers to interact with Oracle
+    using Python code, while Oracle provides the database functionality needed to store and retrieve data efficiently.
 
         URI example
             uri = "oracle://name:password@host:port/service_name?param2=param1&param2=param2"
@@ -99,14 +101,15 @@ class OracleSourceHandler(AbstractSourceHandler):
         try:
             with self._engine.connect() as con:
                 query = self._sql_query if len(self._sql_query) > 0 else f"SELECT * FROM {self._sql_table}"
-                rtn_df = pd.read_sql(query, con=con, **kwargs)
+
+                rtn_df = pd.read_sql(text(query), con=con, **kwargs)
             return rtn_df
         except oracledb.Error as error:
-            raise ConnectionError(f"Failed to load the canonical to MySQL because {error}")
+            raise ConnectionError(f"Failed to load the canonical to Oracle because {error}")
 
 
 class OraclePersistHandler(OracleSourceHandler, AbstractPersistHandler):
-    # a MySQL persist handler
+    # a Oracle persist handler
 
     def persist_canonical(self, canonical: pd.DataFrame, **kwargs) -> bool:
         """ persists the canonical dataset"""
@@ -129,7 +132,7 @@ class OraclePersistHandler(OracleSourceHandler, AbstractPersistHandler):
                     if "int64" == type:
                         new_types[col] = Integer
 
-                canonical.to_sql(con=con, name=table, if_exists="replace", dtype=new_types, index=False, **_params)
+                canonical.to_sql(con=self._engine, name=table, if_exists=_if_exists, dtype=new_types, index=False, **_params)
             return True
         except oracledb.Error as error:
             traceback.print_exc()
